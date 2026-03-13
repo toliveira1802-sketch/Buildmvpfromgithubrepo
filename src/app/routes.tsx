@@ -17,6 +17,11 @@ import AdminOrdensServico from "./pages/admin/AdminOrdensServico";
 import AdminOSDetalhes from "./pages/admin/AdminOSDetalhes";
 import AdminNovaOS from "./pages/admin/AdminNovaOS";
 import AdminConfiguracoes from "./pages/admin/AdminConfiguracoes";
+import AdminRelatorios from "./pages/admin/AdminRelatorios";
+import AdminPendencias from "./pages/admin/AdminPendencias";
+import AdminOperacional from "./pages/admin/AdminOperacional";
+import AdminAgendaMecanicos from "./pages/admin/AdminAgendaMecanicos";
+import AdminUsuarios from "./pages/admin/AdminUsuarios";
 
 export const router = createBrowserRouter([
   {
@@ -164,6 +169,56 @@ export const router = createBrowserRouter([
       {
         index: true,
         Component: AdminConfiguracoes,
+      },
+    ],
+  },
+  {
+    path: "/relatorios",
+    Component: ProtectedRoute,
+    children: [
+      {
+        index: true,
+        Component: AdminRelatorios,
+      },
+    ],
+  },
+  {
+    path: "/pendencias",
+    Component: ProtectedRoute,
+    children: [
+      {
+        index: true,
+        Component: AdminPendencias,
+      },
+    ],
+  },
+  {
+    path: "/operacional",
+    Component: ProtectedRoute,
+    children: [
+      {
+        index: true,
+        Component: AdminOperacional,
+      },
+    ],
+  },
+  {
+    path: "/agenda-mecanicos",
+    Component: ProtectedRoute,
+    children: [
+      {
+        index: true,
+        Component: AdminAgendaMecanicos,
+      },
+    ],
+  },
+  {
+    path: "/usuarios",
+    Component: ProtectedRoute,
+    children: [
+      {
+        index: true,
+        Component: AdminUsuarios,
       },
     ],
   },

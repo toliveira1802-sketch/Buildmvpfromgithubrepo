@@ -16,21 +16,21 @@ export default function Login() {
 
   const roles = [
     { 
-      id: "gestao", 
+      id: "Gestão", 
       label: "GESTAO", 
       icon: UserCircle2, 
       color: "from-purple-500 to-pink-500",
       description: "Administração e relatórios"
     },
     { 
-      id: "consultores", 
+      id: "Consultor Técnico", 
       label: "CONSULTORES", 
       icon: Users, 
       color: "from-blue-500 to-cyan-500",
       description: "Atendimento e vendas"
     },
     { 
-      id: "mecanico", 
+      id: "Mecânico", 
       label: "MECANICO", 
       icon: Wrench, 
       color: "from-orange-500 to-red-500",
@@ -43,7 +43,12 @@ export default function Login() {
     
     // Simula autenticação
     setTimeout(() => {
-      localStorage.setItem("dap-user", JSON.stringify({ role: roleId }));
+      const userData = { 
+        cargo: roleId,
+        nome: roleId === "Gestão" ? "João Silva" : roleId === "Consultor Técnico" ? "Maria Santos" : "Pedro Costa",
+        loginType: "profile"
+      };
+      localStorage.setItem("dap-user", JSON.stringify(userData));
       toast.success("Login realizado com sucesso!");
       navigate("/dashboard");
     }, 500);

@@ -17,14 +17,19 @@ import {
 } from "lucide-react";
 import { Button } from "../components/ui/button";
 import DevLayout from "../components/DevLayout";
+import { aiAPI } from "../services/api";
+import { useAPI } from "../hooks/useAPI";
+import { toast } from "sonner";
 
 interface AIService {
   name: string;
   status: "online" | "offline" | "maintenance";
   requests: number;
   avgResponseTime: number;
-  successRate: number;
-  lastUsed: string;
+  successRate?: number;
+  uptime?: number;
+  lastUsed?: string;
+  lastUpdate?: string;
   icon: any;
   color: string;
 }
@@ -36,7 +41,8 @@ export default function DevDashboard() {
 
   const [isRefreshing, setIsRefreshing] = useState(false);
 
-  const aiServices: AIService[] = [
+  // Dados mockados para fallback
+  const mockServices: AIService[] = [
     {
       name: "Análise Preditiva de Manutenção",
       status: "online",
@@ -113,10 +119,10 @@ export default function DevDashboard() {
   };
 
   const stats = {
-    totalRequests: aiServices.reduce((acc, service) => acc + service.requests, 0),
-    servicesOnline: aiServices.filter(s => s.status === "online").length,
-    avgSuccessRate: (aiServices.reduce((acc, service) => acc + service.successRate, 0) / aiServices.length).toFixed(1),
-    avgResponseTime: Math.round(aiServices.reduce((acc, service) => acc + service.avgResponseTime, 0) / aiServices.length)
+    totalRequests: mockServices.reduce((acc, service) => acc + service.requests, 0),
+    servicesOnline: mockServices.filter(s => s.status === "online").length,
+    avgSuccessRate: (mockServices.reduce((acc, service) => acc + (service.successRate || 0), 0) / mockServices.length).toFixed(1),
+    avgResponseTime: Math.round(mockServices.reduce((acc, service) => acc + service.avgResponseTime, 0) / mockServices.length)
   };
 
   const handleRefresh = () => {
@@ -166,13 +172,13 @@ export default function DevDashboard() {
             <CardHeader className="pb-3">
               <CardDescription className="text-zinc-400">Serviços Online</CardDescription>
               <CardTitle className="text-3xl text-white">
-                {stats.servicesOnline}/{aiServices.length}
+                {stats.servicesOnline}/{mockServices.length}
               </CardTitle>
             </CardHeader>
             <CardContent>
               <div className="flex items-center gap-2 text-sm text-green-500">
                 <CheckCircle2 className="w-4 h-4" />
-                <span>{Math.round((stats.servicesOnline / aiServices.length) * 100)}% disponível</span>
+                <span>{Math.round((stats.servicesOnline / mockServices.length) * 100)}% disponível</span>
               </div>
             </CardContent>
           </Card>
@@ -208,7 +214,7 @@ export default function DevDashboard() {
         <div>
           <h2 className="text-2xl font-bold text-white mb-4">Serviços de IA Disponíveis</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {aiServices.map((service, index) => {
+            {mockServices.map((service, index) => {
               const Icon = service.icon;
               return (
                 <Card 

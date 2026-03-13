@@ -39,7 +39,6 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
     { path: "/clientes", label: "Clientes", icon: Users, roles: ["Gestão", "Consultor Técnico", "Direção"] },
     { path: "/ordens-servico", label: "Ordens de Serviço", icon: FileText, roles: ["Gestão", "Consultor Técnico", "Mecânico", "Direção"] },
     { path: "/relatorios", label: "Relatórios", icon: BarChart3, roles: ["Gestão", "Direção"] },
-    { path: "/servicos", label: "Serviços", icon: ClipboardList, roles: ["Gestão", "Direção"] },
     { path: "/configuracoes", label: "Configurações", icon: Settings, roles: ["Gestão", "Direção"] },
   ];
 

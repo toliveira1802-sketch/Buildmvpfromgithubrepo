@@ -43,7 +43,6 @@ import {
   SelectValue,
 } from "../components/ui/select";
 import { toast } from "sonner";
-import { kvStore } from "../../lib/supabase";
 import DevLayout from "../components/DevLayout";
 
 interface Usuario {
@@ -105,14 +104,48 @@ export default function DevUsers() {
   const loadUsuarios = async () => {
     setIsLoading(true);
     try {
-      const data = await kvStore.getByPrefix("usuario:");
-      const usuariosData = data?.map((item) => item.value) || [];
+      // TODO: Integrar com API quando backend estiver pronto
+      // const data = await fetch('/api/usuarios');
+      
+      // Por enquanto, usar dados mockados locais do localStorage
+      const savedData = localStorage.getItem('doctor-auto-usuarios');
+      const usuariosData: Usuario[] = savedData 
+        ? JSON.parse(savedData)
+        : [
+            {
+              id: "USR-001",
+              nome: "João Silva",
+              email: "joao@doctorauto.com",
+              cpf: "123.456.789-00",
+              telefone: "(11) 98765-4321",
+              cargo: "Gestão",
+              senha: "123456",
+              primeiroAcesso: true,
+              ativo: true,
+              createdAt: new Date().toISOString(),
+              updatedAt: new Date().toISOString(),
+            },
+            {
+              id: "USR-002",
+              nome: "Maria Santos",
+              email: "maria@doctorauto.com",
+              cpf: "987.654.321-00",
+              telefone: "(11) 91234-5678",
+              cargo: "Consultor Técnico",
+              senha: "123456",
+              primeiroAcesso: false,
+              ativo: true,
+              createdAt: new Date().toISOString(),
+              updatedAt: new Date().toISOString(),
+            },
+          ];
+      
       setUsuarios(usuariosData);
-      toast.success("Usuários carregados com sucesso!");
+      // Salvar no localStorage para persistência
+      localStorage.setItem('doctor-auto-usuarios', JSON.stringify(usuariosData));
     } catch (error: any) {
       console.error("Erro ao carregar usuários:", error);
-      toast.error("Erro ao carregar usuários: " + error.message);
-      // Usar dados mockados se falhar
+      toast.error("Erro ao carregar usuários");
       setUsuarios([]);
     } finally {
       setIsLoading(false);
@@ -135,11 +168,13 @@ export default function DevUsers() {
         updatedAt: new Date().toISOString(),
       };
 
-      await kvStore.set(`usuario:${newUsuario.id}`, newUsuario);
+      const updatedUsuarios = [...usuarios, newUsuario];
+      localStorage.setItem('doctor-auto-usuarios', JSON.stringify(updatedUsuarios));
+      setUsuarios(updatedUsuarios);
+      
       toast.success("Usuário criado com sucesso!");
       setIsCreateDialogOpen(false);
       resetForm();
-      loadUsuarios();
     } catch (error: any) {
       toast.error("Erro ao criar usuário: " + error.message);
     }
@@ -159,12 +194,16 @@ export default function DevUsers() {
         updatedAt: new Date().toISOString(),
       };
 
-      await kvStore.set(`usuario:${updatedUsuario.id}`, updatedUsuario);
+      const updatedUsuarios = usuarios.map(u => 
+        u.id === updatedUsuario.id ? updatedUsuario : u
+      );
+      localStorage.setItem('doctor-auto-usuarios', JSON.stringify(updatedUsuarios));
+      setUsuarios(updatedUsuarios);
+      
       toast.success("Usuário atualizado com sucesso!");
       setIsEditDialogOpen(false);
       setSelectedUsuario(null);
       resetForm();
-      loadUsuarios();
     } catch (error: any) {
       toast.error("Erro ao atualizar usuário: " + error.message);
     }
@@ -173,11 +212,13 @@ export default function DevUsers() {
   const handleDeleteUsuario = async () => {
     if (!selectedUsuario) return;
     try {
-      await kvStore.delete(`usuario:${selectedUsuario.id}`);
+      const updatedUsuarios = usuarios.filter(u => u.id !== selectedUsuario.id);
+      localStorage.setItem('doctor-auto-usuarios', JSON.stringify(updatedUsuarios));
+      setUsuarios(updatedUsuarios);
+      
       toast.success("Usuário excluído com sucesso!");
       setIsDeleteDialogOpen(false);
       setSelectedUsuario(null);
-      loadUsuarios();
     } catch (error: any) {
       toast.error("Erro ao excluir usuário: " + error.message);
     }
@@ -190,9 +231,14 @@ export default function DevUsers() {
         ativo: !usuario.ativo,
         updatedAt: new Date().toISOString(),
       };
-      await kvStore.set(`usuario:${usuario.id}`, updatedUsuario);
+      
+      const updatedUsuarios = usuarios.map(u => 
+        u.id === usuario.id ? updatedUsuario : u
+      );
+      localStorage.setItem('doctor-auto-usuarios', JSON.stringify(updatedUsuarios));
+      setUsuarios(updatedUsuarios);
+      
       toast.success(`Usuário ${updatedUsuario.ativo ? "ativado" : "desativado"} com sucesso!`);
-      loadUsuarios();
     } catch (error: any) {
       toast.error("Erro ao alterar status: " + error.message);
     }
