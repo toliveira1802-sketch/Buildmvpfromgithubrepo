@@ -13,53 +13,97 @@ export interface KVStore {
   updated_at?: string;
 }
 
-// Funções helper para KV Store
+const LOCAL_STORAGE_PREFIX = 'kv_store_';
+
+// Fallback localStorage helpers
+const localKV = {
+  getAll(): Record<string, any> {
+    const raw = localStorage.getItem(LOCAL_STORAGE_PREFIX + 'data');
+    return raw ? JSON.parse(raw) : {};
+  },
+  save(store: Record<string, any>) {
+    localStorage.setItem(LOCAL_STORAGE_PREFIX + 'data', JSON.stringify(store));
+  },
+};
+
+// Funções helper para KV Store com fallback localStorage
 export const kvStore = {
   async get(key: string) {
-    const { data, error } = await supabase
-      .from('kv_store_0092e077')
-      .select('value')
-      .eq('key', key)
-      .single();
-    
-    if (error) throw error;
-    return data?.value;
+    try {
+      const { data, error } = await supabase
+        .from('kv_store_0092e077')
+        .select('value')
+        .eq('key', key)
+        .single();
+
+      if (error) throw error;
+      return data?.value;
+    } catch {
+      const store = localKV.getAll();
+      return store[key] ?? null;
+    }
   },
 
   async set(key: string, value: any) {
-    const { error } = await supabase
-      .from('kv_store_0092e077')
-      .upsert({ key, value, updated_at: new Date().toISOString() });
-    
-    if (error) throw error;
+    try {
+      const { error } = await supabase
+        .from('kv_store_0092e077')
+        .upsert({ key, value, updated_at: new Date().toISOString() });
+
+      if (error) throw error;
+    } catch {
+      const store = localKV.getAll();
+      store[key] = value;
+      localKV.save(store);
+    }
   },
 
   async delete(key: string) {
-    const { error } = await supabase
-      .from('kv_store_0092e077')
-      .delete()
-      .eq('key', key);
-    
-    if (error) throw error;
+    try {
+      const { error } = await supabase
+        .from('kv_store_0092e077')
+        .delete()
+        .eq('key', key);
+
+      if (error) throw error;
+    } catch {
+      const store = localKV.getAll();
+      delete store[key];
+      localKV.save(store);
+    }
   },
 
   async getByPrefix(prefix: string) {
-    const { data, error } = await supabase
-      .from('kv_store_0092e077')
-      .select('*')
-      .like('key', `${prefix}%`);
-    
-    if (error) throw error;
-    return data;
+    try {
+      const { data, error } = await supabase
+        .from('kv_store_0092e077')
+        .select('*')
+        .like('key', `${prefix}%`);
+
+      if (error) throw error;
+      return data;
+    } catch {
+      const store = localKV.getAll();
+      return Object.entries(store)
+        .filter(([k]) => k.startsWith(prefix))
+        .map(([key, value]) => ({ key, value }));
+    }
   },
 
   async getAll() {
-    const { data, error } = await supabase
-      .from('kv_store_0092e077')
-      .select('*')
-      .order('key');
-    
-    if (error) throw error;
-    return data;
+    try {
+      const { data, error } = await supabase
+        .from('kv_store_0092e077')
+        .select('*')
+        .order('key');
+
+      if (error) throw error;
+      return data;
+    } catch {
+      const store = localKV.getAll();
+      return Object.entries(store)
+        .sort(([a], [b]) => a.localeCompare(b))
+        .map(([key, value]) => ({ key, value }));
+    }
   }
 };
