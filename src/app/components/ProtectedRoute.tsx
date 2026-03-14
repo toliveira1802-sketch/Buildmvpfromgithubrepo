@@ -10,8 +10,8 @@ export default function ProtectedRoute() {
     const user = localStorage.getItem("dap-user");
     
     if (!user) {
-      // Se não há usuário, redireciona para dev-login ou landing dependendo da rota
-      if (location.pathname.startsWith("/dev-")) {
+      // Se não há usuário, redireciona para landing ou login dependendo da rota
+      if (location.pathname.startsWith("/dev-dashboard")) {
         navigate("/dev-login");
       } else {
         navigate("/");

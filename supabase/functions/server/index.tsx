@@ -3,6 +3,7 @@ import { cors } from "npm:hono/cors";
 import { logger } from "npm:hono/logger";
 import { createClient } from "npm:@supabase/supabase-js@2";
 import * as kv from "./kv_store.tsx";
+import * as crypto from "node:crypto";
 
 const app = new Hono();
 
@@ -27,7 +28,87 @@ app.use(
   })
 );
 
-// ==================== MIDDLEWARE DE AUTENTICAÇÃO ====================
+// ==================== HELPERS ====================
+
+// Hash de senha simples (em produção, usar bcrypt)
+function hashPassword(password: string): string {
+  return crypto.createHash('sha256').update(password).digest('hex');
+}
+
+// Gerar token aleatório
+function generateToken(): string {
+  return crypto.randomBytes(32).toString('hex');
+}
+
+// ==================== INICIALIZAÇÃO DO BANCO ====================
+
+// Inicializar usuários padrão (executar uma vez)
+async function initializeDefaultUsers() {
+  const usersExist = await kv.get("users:initialized");
+  
+  if (!usersExist) {
+    console.log("Inicializando usuários padrão...");
+    
+    const defaultUsers = [
+      {
+        username: "Dev_thales",
+        password: hashPassword("dev123"),
+        role: "dev",
+        firstName: "thales",
+        name: "Thales",
+        permissions: ["full-access", "database", "settings", "users"],
+        createdAt: new Date().toISOString()
+      },
+      {
+        username: "Gestao_thales",
+        password: hashPassword("gestao123"),
+        role: "gestao",
+        firstName: "thales",
+        name: "Thales",
+        createdAt: new Date().toISOString()
+      },
+      {
+        username: "Consultor_thales",
+        password: hashPassword("consultor123"),
+        role: "consultor",
+        firstName: "thales",
+        name: "Thales",
+        createdAt: new Date().toISOString()
+      },
+      {
+        username: "Mecanico_thales",
+        password: hashPassword("mecanico123"),
+        role: "mecanico",
+        firstName: "thales",
+        name: "Thales",
+        createdAt: new Date().toISOString()
+      }
+    ];
+
+    for (const user of defaultUsers) {
+      await kv.set(`user:${user.username}`, user);
+    }
+
+    await kv.set("users:initialized", true);
+    console.log("✅ Usuários padrão criados!");
+    console.log("📋 Credenciais:");
+    console.log("   Dev_thales / dev123");
+    console.log("   Gestao_thales / gestao123");
+    console.log("   Consultor_thales / consultor123");
+    console.log("   Mecanico_thales / mecanico123");
+  }
+}
+
+// Executar inicialização na primeira requisição
+let initialized = false;
+async function ensureInitialized() {
+  if (!initialized) {
+    await initializeDefaultUsers();
+    initialized = true;
+  }
+}
+
+// ==================== MIDDLEWARE ====================
 
 async function authMiddleware(c: any, next: any) {
   const authHeader = c.req.header("Authorization");
@@ -38,9 +119,8 @@ async function authMiddleware(c: any, next: any) {
 
   const token = authHeader.replace("Bearer ", "");
   
-  // Verificar se é um token JWT ou session ID
+  // Verificar se é um session token
   if (token.startsWith("session_")) {
-    // Session baseada em KV
     const session = await kv.get(`session:${token}`);
     if (!session) {
       return c.json({ error: "Unauthorized - Session expired" }, 401);
@@ -50,12 +130,7 @@ async function authMiddleware(c: any, next: any) {
     // Public anon key - permitir sem usuário
     c.set("user", null);
   } else {
-    // JWT Token - verificar com Supabase Auth
-    const { data, error } = await supabase.auth.getUser(token);
-    if (error || !data.user) {
-      return c.json({ error: "Unauthorized - Invalid token" }, 401);
-    }
-    c.set("user", data.user);
+    return c.json({ error: "Unauthorized - Invalid token" }, 401);
   }
 
   await next();
@@ -63,80 +138,322 @@ async function authMiddleware(c: any, next: any) {
 
 // ==================== HEALTH CHECK ====================
 
-app.get("/make-server-0092e077/health", (c) => {
-  return c.json({ status: "ok", timestamp: new Date().toISOString() });
+app.get("/make-server-0092e077/health", async (c) => {
+  await ensureInitialized();
+  return c.json({ 
+    status: "ok", 
+    timestamp: new Date().toISOString(),
+    database: "kv-store"
+  });
 });
 
 // ==================== AUTENTICAÇÃO ====================
 
-// Login com email e senha (DEV)
-app.post("/make-server-0092e077/auth/login", async (c) => {
+// Login de desenvolvedor
+app.post("/make-server-0092e077/auth/login-dev", async (c) => {
+  await ensureInitialized();
+  
   try {
-    const { email, password } = await c.req.json();
+    const { username, password } = await c.req.json();
 
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
-
-    if (error) {
-      console.error("Auth error:", error);
-      return c.json({ error: error.message }, 400);
+    if (!username || !password) {
+      return c.json({ error: "Username e senha são obrigatórios" }, 400);
     }
 
-    return c.json({
-      access_token: data.session?.access_token,
-      user: {
-        id: data.user?.id,
-        email: data.user?.email,
-        role: "admin",
-      },
-    });
-  } catch (error) {
-    console.error("Login error:", error);
-    return c.json({ error: "Internal server error" }, 500);
-  }
-});
-
-// Login por perfil (sem senha)
-app.post("/make-server-0092e077/auth/login-profile", async (c) => {
-  try {
-    const { cargo, nome } = await c.req.json();
-
-    const sessionId = `session_${Date.now()}_${Math.random().toString(36).substring(7)}`;
+    // Buscar usuário
+    const user = await kv.get(`user:${username}`);
     
-    const user = {
-      cargo,
-      nome,
-      loginType: "profile",
-      timestamp: new Date().toISOString(),
+    if (!user) {
+      return c.json({ error: "Usuário não encontrado" }, 404);
+    }
+
+    // Verificar se é desenvolvedor
+    if (user.role !== "dev") {
+      return c.json({ error: "Acesso negado - Apenas desenvolvedores" }, 403);
+    }
+
+    // Verificar senha
+    const hashedPassword = hashPassword(password);
+    if (user.password !== hashedPassword) {
+      return c.json({ error: "Senha incorreta" }, 401);
+    }
+
+    // Criar sessão
+    const sessionToken = `session_${Date.now()}_${generateToken()}`;
+    const sessionData = {
+      userId: user.username,
+      username: user.username,
+      role: user.role,
+      firstName: user.firstName,
+      name: user.name,
+      permissions: user.permissions,
+      createdAt: new Date().toISOString()
     };
 
-    // Armazenar sessão no KV (expira em 24h)
-    await kv.set(`session:${sessionId}`, user);
+    // Salvar sessão (expira em 24h)
+    await kv.set(`session:${sessionToken}`, sessionData);
 
     return c.json({
-      session_id: sessionId,
-      user,
+      sessionToken,
+      userId: user.username,
+      user: {
+        username: user.username,
+        role: user.role,
+        firstName: user.firstName,
+        name: user.name,
+        permissions: user.permissions
+      }
     });
   } catch (error) {
-    console.error("Profile login error:", error);
+    console.error("Dev login error:", error);
     return c.json({ error: "Internal server error" }, 500);
   }
 });
 
-// Verificar sessão
-app.get("/make-server-0092e077/auth/session", async (c) => {
-  const sessionId = c.req.query("session_id");
+// Login de staff (Gestão, Consultor, Mecânico)
+app.post("/make-server-0092e077/auth/login-staff", async (c) => {
+  await ensureInitialized();
   
-  if (sessionId) {
-    const session = await kv.get(`session:${sessionId}`);
-    if (session) {
-      return c.json({ user: session });
+  try {
+    const { username, password, role } = await c.req.json();
+
+    if (!username || !password || !role) {
+      return c.json({ error: "Username, senha e role são obrigatórios" }, 400);
     }
+
+    // Buscar usuário
+    const user = await kv.get(`user:${username}`);
+    
+    if (!user) {
+      return c.json({ error: "Usuário não encontrado" }, 404);
+    }
+
+    // Verificar se a role bate
+    if (user.role.toLowerCase() !== role.toLowerCase()) {
+      return c.json({ error: "Perfil selecionado não corresponde ao usuário" }, 403);
+    }
+
+    // Verificar senha
+    const hashedPassword = hashPassword(password);
+    if (user.password !== hashedPassword) {
+      return c.json({ error: "Senha incorreta" }, 401);
+    }
+
+    // Criar sessão
+    const sessionToken = `session_${Date.now()}_${generateToken()}`;
+    const sessionData = {
+      userId: user.username,
+      username: user.username,
+      role: user.role,
+      firstName: user.firstName,
+      name: user.name,
+      createdAt: new Date().toISOString()
+    };
+
+    // Salvar sessão (expira em 24h)
+    await kv.set(`session:${sessionToken}`, sessionData);
+
+    return c.json({
+      sessionToken,
+      userId: user.username,
+      user: {
+        username: user.username,
+        role: user.role,
+        firstName: user.firstName,
+        name: user.name
+      }
+    });
+  } catch (error) {
+    console.error("Staff login error:", error);
+    return c.json({ error: "Internal server error" }, 500);
+  }
+});
+
+// Recuperação de senha - Gerar token
+app.post("/make-server-0092e077/auth/forgot-password", async (c) => {
+  await ensureInitialized();
+  
+  try {
+    const { username } = await c.req.json();
+
+    if (!username) {
+      return c.json({ error: "Username é obrigatório" }, 400);
+    }
+
+    // Buscar usuário
+    const user = await kv.get(`user:${username}`);
+    
+    if (!user) {
+      return c.json({ error: "Usuário não encontrado" }, 404);
+    }
+
+    // Gerar token de recuperação
+    const token = generateToken().substring(0, 16); // Token de 16 caracteres
+    const expiresAt = new Date();
+    expiresAt.setHours(expiresAt.getHours() + 2); // Válido por 2 horas
+
+    const recoveryData = {
+      username: user.username,
+      token,
+      expiresAt: expiresAt.toISOString(),
+      createdAt: new Date().toISOString()
+    };
+
+    // Salvar token de recuperação
+    await kv.set(`recovery:${username}`, recoveryData);
+
+    return c.json({
+      token,
+      expiresAt: recoveryData.expiresAt,
+      message: "Token de recuperação gerado com sucesso"
+    });
+  } catch (error) {
+    console.error("Forgot password error:", error);
+    return c.json({ error: "Internal server error" }, 500);
+  }
+});
+
+// Verificar token de recuperação
+app.post("/make-server-0092e077/auth/verify-token", async (c) => {
+  await ensureInitialized();
+  
+  try {
+    const { username, token } = await c.req.json();
+
+    if (!username || !token) {
+      return c.json({ error: "Username e token são obrigatórios" }, 400);
+    }
+
+    // Buscar token de recuperação
+    const recovery = await kv.get(`recovery:${username}`);
+    
+    if (!recovery) {
+      return c.json({ error: "Token não encontrado" }, 404);
+    }
+
+    // Verificar se o token bate
+    if (recovery.token !== token) {
+      return c.json({ error: "Token inválido" }, 401);
+    }
+
+    // Verificar se o token expirou
+    const now = new Date();
+    const expiresAt = new Date(recovery.expiresAt);
+    
+    if (now > expiresAt) {
+      // Remover token expirado
+      await kv.del(`recovery:${username}`);
+      return c.json({ error: "Token expirado" }, 401);
+    }
+
+    return c.json({
+      message: "Token válido",
+      username: recovery.username
+    });
+  } catch (error) {
+    console.error("Verify token error:", error);
+    return c.json({ error: "Internal server error" }, 500);
+  }
+});
+
+// Logout
+app.post("/make-server-0092e077/auth/logout", authMiddleware, async (c) => {
+  try {
+    const authHeader = c.req.header("Authorization");
+    const token = authHeader?.replace("Bearer ", "");
+    
+    if (token && token.startsWith("session_")) {
+      await kv.del(`session:${token}`);
+    }
+
+    return c.json({ message: "Logout realizado com sucesso" });
+  } catch (error) {
+    console.error("Logout error:", error);
+    return c.json({ error: "Internal server error" }, 500);
+  }
+});
+
+// ==================== USUÁRIOS ====================
+
+// Listar todos os usuários (apenas dev)
+app.get("/make-server-0092e077/users", authMiddleware, async (c) => {
+  const user = c.get("user");
+  
+  if (!user || user.role !== "dev") {
+    return c.json({ error: "Forbidden - Dev access only" }, 403);
   }
 
-  return c.json({ error: "Session not found" }, 404);
+  try {
+    const users = await kv.getByPrefix("user:");
+    const userList = users.map(item => {
+      const { password, ...userWithoutPassword } = item.value;
+      return userWithoutPassword;
+    });
+    
+    return c.json(userList);
+  } catch (error) {
+    console.error("Error fetching users:", error);
+    return c.json({ error: "Failed to fetch users" }, 500);
+  }
+});
+
+// Criar novo usuário (apenas dev)
+app.post("/make-server-0092e077/users", authMiddleware, async (c) => {
+  const user = c.get("user");
+  
+  if (!user || user.role !== "dev") {
+    return c.json({ error: "Forbidden - Dev access only" }, 403);
+  }
+
+  try {
+    const { username, password, role, firstName } = await c.req.json();
+
+    if (!username || !password || !role || !firstName) {
+      return c.json({ error: "Todos os campos são obrigatórios" }, 400);
+    }
+
+    // Verificar se usuário já existe
+    const existingUser = await kv.get(`user:${username}`);
+    if (existingUser) {
+      return c.json({ error: "Username já existe" }, 400);
+    }
+
+    const newUser = {
+      username,
+      password: hashPassword(password),
+      role,
+      firstName,
+      name: firstName.charAt(0).toUpperCase() + firstName.slice(1),
+      permissions: role === "dev" ? ["full-access", "database", "settings", "users"] : [],
+      createdAt: new Date().toISOString()
+    };
+
+    await kv.set(`user:${username}`, newUser);
+
+    const { password: _, ...userWithoutPassword } = newUser;
+    return c.json(userWithoutPassword, 201);
+  } catch (error) {
+    console.error("Error creating user:", error);
+    return c.json({ error: "Failed to create user" }, 500);
+  }
+});
+
+// ==================== DASHBOARD / KPIs ====================
+
+app.get("/make-server-0092e077/dashboard/kpis", authMiddleware, async (c) => {
+  try {
+    // Por enquanto retorna dados vazios
+    // TODO: Implementar cálculo real de KPIs do banco
+    return c.json({
+      veiculosPatio: 0,
+      osAbertas: 0,
+      receitaDia: 0,
+      osFinalizadas: 0
+    });
+  } catch (error) {
+    console.error("Error fetching KPIs:", error);
+    return c.json({ error: "Failed to fetch KPIs" }, 500);
+  }
 });
 
 // ==================== CLIENTES ====================
@@ -194,82 +511,6 @@ app.post("/make-server-0092e077/clientes", authMiddleware, async (c) => {
   }
 });
 
-app.put("/make-server-0092e077/clientes/:id", authMiddleware, async (c) => {
-  try {
-    const id = c.req.param("id");
-    const updates = await c.req.json();
-    
-    const cliente = await kv.get(`cliente:${id}`);
-    if (!cliente) {
-      return c.json({ error: "Cliente not found" }, 404);
-    }
-
-    const updated = { ...cliente, ...updates };
-    await kv.set(`cliente:${id}`, updated);
-
-    return c.json(updated);
-  } catch (error) {
-    console.error("Error updating cliente:", error);
-    return c.json({ error: "Failed to update cliente" }, 500);
-  }
-});
-
-// ==================== AGENDAMENTOS ====================
-
-app.get("/make-server-0092e077/agendamentos", authMiddleware, async (c) => {
-  try {
-    const agendamentos = await kv.getByPrefix("agendamento:");
-    return c.json(agendamentos.map(item => item.value));
-  } catch (error) {
-    console.error("Error fetching agendamentos:", error);
-    return c.json({ error: "Failed to fetch agendamentos" }, 500);
-  }
-});
-
-app.post("/make-server-0092e077/agendamentos", authMiddleware, async (c) => {
-  try {
-    const body = await c.req.json();
-    
-    const allAgendamentos = await kv.getByPrefix("agendamento:");
-    const nextId = allAgendamentos.length + 1;
-    const id = `AGD-${String(nextId).padStart(3, "0")}`;
-
-    const agendamento = {
-      id,
-      ...body,
-      status: body.status || "Pendente",
-      dataCriacao: new Date().toISOString(),
-    };
-
-    await kv.set(`agendamento:${id}`, agendamento);
-
-    return c.json(agendamento, 201);
-  } catch (error) {
-    console.error("Error creating agendamento:", error);
-    return c.json({ error: "Failed to create agendamento" }, 500);
-  }
-});
-
-app.put("/make-server-0092e077/agendamentos/:id", authMiddleware, async (c) => {
-  try {
-    const id = c.req.param("id");
-    const updates = await c.req.json();
-    
-    const agendamento = await kv.get(`agendamento:${id}`);
-    if (!agendamento) {
-      return c.json({ error: "Agendamento not found" }, 404);
-    }
-
-    const updated = { ...agendamento, ...updates };
-    await kv.set(`agendamento:${id}`, updated);
-
-    return c.json(updated);
-  } catch (error) {
-    console.error("Error updating agendamento:", error);
-    return c.json({ error: "Failed to update agendamento" }, 500);
-  }
-});
-
 // ==================== ORDENS DE SERVIÇO ====================
 
 app.get("/make-server-0092e077/ordens-servico", authMiddleware, async (c) => {
@@ -288,7 +529,7 @@ app.get("/make-server-0092e077/ordens-servico/:id", authMiddleware, async (c) =>
     const os = await kv.get(`os:${id}`);
     
     if (!os) {
-      return c.json({ error: "OS not found" }, 404);
+      return c.json({ error: "Ordem de serviço not found" }, 404);
     }
 
     return c.json(os);
@@ -302,20 +543,17 @@ app.post("/make-server-0092e077/ordens-servico", authMiddleware, async (c) => {
   try {
     const body = await c.req.json();
     
-    const allOS = await kv.getByPrefix("os:");
-    const nextId = allOS.length + 1;
-    const id = `OS-${String(nextId).padStart(3, "0")}`;
-
-    // Calcular valor total
-    const totalServicos = (body.servicos || []).reduce((sum: number, s: any) => sum + (s.valorMaoObra || 0), 0);
-    const totalPecas = (body.pecas || []).reduce((sum: number, p: any) => sum + (p.quantidade * p.valorUnitario || 0), 0);
+    // Gerar ID
+    const allOrdens = await kv.getByPrefix("os:");
+    const nextId = allOrdens.length + 1;
+    const id = `OS-${String(nextId).padStart(4, "0")}`;
 
     const os = {
       id,
       ...body,
-      status: body.status || "Aguardando",
+      status: "aguardando",
       dataAbertura: new Date().toISOString(),
-      valorTotal: totalServicos + totalPecas,
+      ultimaAtualizacao: new Date().toISOString(),
     };
 
     await kv.set(`os:${id}`, os);
@@ -327,311 +565,6 @@ app.post("/make-server-0092e077/ordens-servico", authMiddleware, async (c) => {
   }
 });
 
-app.put("/make-server-0092e077/ordens-servico/:id", authMiddleware, async (c) => {
-  try {
-    const id = c.req.param("id");
-    const updates = await c.req.json();
-    
-    const os = await kv.get(`os:${id}`);
-    if (!os) {
-      return c.json({ error: "OS not found" }, 404);
-    }
-
-    const updated = { ...os, ...updates };
-    
-    // Recalcular valor se serviços ou peças mudaram
-    if (updates.servicos || updates.pecas) {
-      const totalServicos = (updated.servicos || []).reduce((sum: number, s: any) => sum + (s.valorMaoObra || 0), 0);
-      const totalPecas = (updated.pecas || []).reduce((sum: number, p: any) => sum + (p.quantidade * p.valorUnitario || 0), 0);
-      updated.valorTotal = totalServicos + totalPecas;
-    }
-
-    await kv.set(`os:${id}`, updated);
-
-    return c.json(updated);
-  } catch (error) {
-    console.error("Error updating OS:", error);
-    return c.json({ error: "Failed to update OS" }, 500);
-  }
-});
-
-// ==================== PÁTIO KANBAN ====================
-
-app.get("/make-server-0092e077/patio", authMiddleware, async (c) => {
-  try {
-    const patio = await kv.getByPrefix("patio:");
-    return c.json(patio.map(item => item.value));
-  } catch (error) {
-    console.error("Error fetching patio:", error);
-    return c.json({ error: "Failed to fetch patio" }, 500);
-  }
-});
-
-app.put("/make-server-0092e077/patio/:id/status", authMiddleware, async (c) => {
-  try {
-    const id = c.req.param("id");
-    const { status } = await c.req.json();
-    
-    const item = await kv.get(`patio:${id}`);
-    if (!item) {
-      return c.json({ error: "Item not found" }, 404);
-    }
-
-    const updated = { ...item, status };
-    await kv.set(`patio:${id}`, updated);
-
-    return c.json(updated);
-  } catch (error) {
-    console.error("Error updating patio status:", error);
-    return c.json({ error: "Failed to update status" }, 500);
-  }
-});
-
-// ==================== IA SERVICES ====================
-
-app.get("/make-server-0092e077/ai/services", authMiddleware, async (c) => {
-  try {
-    // Retornar dados mockados de IA
-    const services = [
-      {
-        id: "analise-preditiva",
-        name: "Análise Preditiva",
-        status: "online",
-        uptime: 99.8,
-        requests: 15234,
-        avgResponseTime: 145,
-        lastUpdate: new Date().toISOString(),
-      },
-      {
-        id: "chatbot",
-        name: "Chatbot Atendimento",
-        status: "online",
-        uptime: 99.5,
-        requests: 28456,
-        avgResponseTime: 89,
-        lastUpdate: new Date().toISOString(),
-      },
-      {
-        id: "otimizacao-precos",
-        name: "Otimização de Preços",
-        status: "online",
-        uptime: 98.9,
-        requests: 8923,
-        avgResponseTime: 234,
-        lastUpdate: new Date().toISOString(),
-      },
-      {
-        id: "diagnostico-ia",
-        name: "Diagnóstico por IA",
-        status: "online",
-        uptime: 99.2,
-        requests: 12567,
-        avgResponseTime: 312,
-        lastUpdate: new Date().toISOString(),
-      },
-      {
-        id: "gestao-estoque",
-        name: "Gestão Inteligente de Estoque",
-        status: "online",
-        uptime: 99.7,
-        requests: 6234,
-        avgResponseTime: 178,
-        lastUpdate: new Date().toISOString(),
-      },
-      {
-        id: "recomendacao",
-        name: "Sistema de Recomendação",
-        status: "online",
-        uptime: 99.1,
-        requests: 9185,
-        avgResponseTime: 156,
-        lastUpdate: new Date().toISOString(),
-      },
-    ];
-
-    return c.json(services);
-  } catch (error) {
-    console.error("Error fetching AI services:", error);
-    return c.json({ error: "Failed to fetch AI services" }, 500);
-  }
-});
-
-app.get("/make-server-0092e077/ai/metrics", authMiddleware, async (c) => {
-  try {
-    const metrics = {
-      totalRequests: 80599,
-      avgResponseTime: 167,
-      successRate: 98.7,
-      activeModels: 6,
-      cpuUsage: 45.2,
-      memoryUsage: 62.8,
-      lastUpdate: new Date().toISOString(),
-    };
-
-    return c.json(metrics);
-  } catch (error) {
-    console.error("Error fetching AI metrics:", error);
-    return c.json({ error: "Failed to fetch AI metrics" }, 500);
-  }
-});
-
-// ==================== RELATÓRIOS ====================
-
-app.get("/make-server-0092e077/relatorios/faturamento", authMiddleware, async (c) => {
-  try {
-    // Buscar todas as OS concluídas
-    const ordens = await kv.getByPrefix("os:");
-    const osConcluidas = ordens
-      .map(item => item.value)
-      .filter((os: any) => os.status === "Concluído");
-
-    // Agrupar por mês
-    const faturamentoPorMes = osConcluidas.reduce((acc: any, os: any) => {
-      const data = new Date(os.dataConclusao || os.dataAbertura);
-      const mes = data.toLocaleDateString("pt-BR", { month: "short" });
-      
-      if (!acc[mes]) {
-        acc[mes] = { mes, valor: 0, meta: 50000 };
-      }
-      
-      acc[mes].valor += os.valorTotal || 0;
-      
-      return acc;
-    }, {});
-
-    return c.json(Object.values(faturamentoPorMes));
-  } catch (error) {
-    console.error("Error fetching faturamento:", error);
-    return c.json({ error: "Failed to fetch faturamento" }, 500);
-  }
-});
-
-app.get("/make-server-0092e077/relatorios/servicos-populares", authMiddleware, async (c) => {
-  try {
-    const ordens = await kv.getByPrefix("os:");
-    
-    const servicosCount: any = {};
-    
-    ordens.forEach((item: any) => {
-      const os = item.value;
-      (os.servicos || []).forEach((servico: any) => {
-        if (!servicosCount[servico.descricao]) {
-          servicosCount[servico.descricao] = 0;
-        }
-        servicosCount[servico.descricao]++;
-      });
-    });
-
-    const result = Object.entries(servicosCount)
-      .map(([nome, count]) => ({ nome, quantidade: count }))
-      .sort((a: any, b: any) => b.quantidade - a.quantidade)
-      .slice(0, 6);
-
-    return c.json(result);
-  } catch (error) {
-    console.error("Error fetching servicos populares:", error);
-    return c.json({ error: "Failed to fetch servicos populares" }, 500);
-  }
-});
-
-app.get("/make-server-0092e077/relatorios/performance-mecanicos", authMiddleware, async (c) => {
-  try {
-    const ordens = await kv.getByPrefix("os:");
-    const osConcluidas = ordens
-      .map(item => item.value)
-      .filter((os: any) => os.status === "Concluído");
-
-    const performancePorMecanico: any = {};
-
-    osConcluidas.forEach((os: any) => {
-      const mecanico = os.responsavel;
-      
-      if (!performancePorMecanico[mecanico]) {
-        performancePorMecanico[mecanico] = {
-          nome: mecanico,
-          osConcluidas: 0,
-          faturamento: 0,
-        };
-      }
-      
-      performancePorMecanico[mecanico].osConcluidas++;
-      performancePorMecanico[mecanico].faturamento += os.valorTotal || 0;
-    });
-
-    const result = Object.values(performancePorMecanico)
-      .sort((a: any, b: any) => b.faturamento - a.faturamento);
-
-    return c.json(result);
-  } catch (error) {
-    console.error("Error fetching performance mecanicos:", error);
-    return c.json({ error: "Failed to fetch performance" }, 500);
-  }
-});
-
-// ==================== SEED DATA (Dados Iniciais) ====================
-
-app.post("/make-server-0092e077/seed", async (c) => {
-  try {
-    // Clientes
-    const clientes = [
-      {
-        id: "CLI-001",
-        nome: "Carlos Silva",
-        cpf: "123.456.789-00",
-        telefone: "(11) 98765-4321",
-        email: "carlos@email.com",
-        endereco: "Rua das Flores, 123",
-        cidade: "São Paulo - SP",
-        veiculos: 2,
-        ultimaVisita: "2026-03-10",
-        totalGasto: 5420.0,
-        dataCadastro: "2025-01-15",
-      },
-      {
-        id: "CLI-002",
-        nome: "Maria Santos",
-        cpf: "234.567.890-11",
-        telefone: "(11) 91234-5678",
-        email: "maria@email.com",
-        endereco: "Av. Paulista, 1000",
-        cidade: "São Paulo - SP",
-        veiculos: 1,
-        ultimaVisita: "2026-03-08",
-        totalGasto: 2850.0,
-        dataCadastro: "2025-02-10",
-      },
-    ];
-
-    for (const cliente of clientes) {
-      await kv.set(`cliente:${cliente.id}`, cliente);
-    }
-
-    // Agendamentos
-    const agendamentos = [
-      {
-        id: "AGD-001",
-        cliente: "Carlos Silva",
-        telefone: "(11) 98765-4321",
-        email: "carlos@email.com",
-        veiculo: "Honda Civic 2020",
-        placa: "ABC-1234",
-        data: "2026-03-15",
-        horario: "09:00",
-        servico: "Revisão Completa",
-        status: "Confirmado",
-        dataCriacao: "2026-03-10T10:00:00Z",
-      },
-    ];
-
-    for (const agd of agendamentos) {
-      await kv.set(`agendamento:${agd.id}`, agd);
-    }
-
-    return c.json({ message: "Seed data created successfully" });
-  } catch (error) {
-    console.error("Error seeding data:", error);
-    return c.json({ error: "Failed to seed data" }, 500);
-  }
-});
+// ==================== START SERVER ====================
 
 Deno.serve(app.fetch);

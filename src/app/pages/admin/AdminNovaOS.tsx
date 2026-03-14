@@ -44,6 +44,74 @@ interface Peca {
 export default function AdminNovaOS() {
   const navigate = useNavigate();
 
+  const [clienteSearchTerm, setClienteSearchTerm] = useState("");
+  const [showClienteDropdown, setShowClienteDropdown] = useState(false);
+  const [selectedCliente, setSelectedCliente] = useState<any>(null);
+
+  // Lista de clientes mockados
+  const clientesDisponiveis = [
+    {
+      id: "CLI-001",
+      nome: "Carlos Silva",
+      telefone: "(11) 98765-4321",
+      email: "carlos@email.com",
+      veiculos: [
+        { marca: "Honda", modelo: "Civic", ano: 2020, placa: "ABC-1234" }
+      ]
+    },
+    {
+      id: "CLI-002",
+      nome: "Maria Santos",
+      telefone: "(11) 91234-5678",
+      email: "maria@email.com",
+      veiculos: [
+        { marca: "Toyota", modelo: "Corolla", ano: 2021, placa: "DEF-5678" }
+      ]
+    },
+    {
+      id: "CLI-003",
+      nome: "João Oliveira",
+      telefone: "(11) 99876-5432",
+      email: "joao@email.com",
+      veiculos: [
+        { marca: "Ford", modelo: "Focus", ano: 2019, placa: "GHI-9012" }
+      ]
+    },
+    {
+      id: "CLI-004",
+      nome: "Ana Costa",
+      telefone: "(11) 97654-3210",
+      email: "ana@email.com",
+      veiculos: [
+        { marca: "Chevrolet", modelo: "Onix", ano: 2022, placa: "JKL-3456" }
+      ]
+    },
+  ];
+
+  const filteredClientes = clientesDisponiveis.filter(cliente =>
+    cliente.nome.toLowerCase().includes(clienteSearchTerm.toLowerCase()) ||
+    cliente.telefone.includes(clienteSearchTerm) ||
+    cliente.email.toLowerCase().includes(clienteSearchTerm.toLowerCase())
+  );
+
+  const handleSelectCliente = (cliente: any) => {
+    setSelectedCliente(cliente);
+    setClienteSearchTerm(cliente.nome);
+    setShowClienteDropdown(false);
+    
+    // Preencher dados do cliente
+    setFormData({
+      ...formData,
+      cliente: cliente.nome,
+      telefone: cliente.telefone,
+      email: cliente.email,
+      veiculo: cliente.veiculos[0] ? `${cliente.veiculos[0].marca} ${cliente.veiculos[0].modelo} ${cliente.veiculos[0].ano}` : "",
+      placa: cliente.veiculos[0]?.placa || "",
+    });
+    
+    toast.success(`Cliente ${cliente.nome} selecionado!`);
+  };
+
   const [formData, setFormData] = useState({
     cliente: "",
     telefone: "",
@@ -181,18 +249,48 @@ export default function AdminNovaOS() {
             <CardContent className="space-y-4">
               <div>
                 <Label className="text-zinc-300">Cliente *</Label>
-                <div className="flex gap-2">
+                <div className="relative">
                   <Input
-                    value={formData.cliente}
-                    onChange={(e) =>
-                      setFormData({ ...formData, cliente: e.target.value })
-                    }
-                    placeholder="Nome do cliente"
-                    className="bg-zinc-800 border-zinc-700 text-white"
+                    value={clienteSearchTerm}
+                    onChange={(e) => {
+                      setClienteSearchTerm(e.target.value);
+                      setShowClienteDropdown(true);
+                    }}
+                    onFocus={() => setShowClienteDropdown(true)}
+                    placeholder="Digite para buscar cliente..."
+                    className="bg-zinc-800 border-zinc-700 text-white pr-10"
                   />
-                  <Button variant="outline" size="icon">
-                    <Search className="h-4 w-4" />
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="absolute right-0 top-0 hover:bg-transparent"
+                    onClick={() => setShowClienteDropdown(!showClienteDropdown)}
+                  >
+                    <Search className="h-4 w-4 text-zinc-400" />
                   </Button>
+                  
+                  {/* Dropdown de clientes */}
+                  {showClienteDropdown && clienteSearchTerm && filteredClientes.length > 0 && (
+                    <div className="absolute z-50 mt-1 w-full bg-zinc-800 border border-zinc-700 rounded-lg shadow-xl max-h-60 overflow-auto">
+                      {filteredClientes.map(cliente => (
+                        <div
+                          key={cliente.id}
+                          className="px-4 py-3 cursor-pointer hover:bg-zinc-700 transition-colors border-b border-zinc-700 last:border-b-0"
+                          onClick={() => handleSelectCliente(cliente)}
+                        >
+                          <div className="text-white font-medium">{cliente.nome}</div>
+                          <div className="text-sm text-zinc-400">{cliente.telefone} • {cliente.email}</div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  
+                  {/* Mensagem quando não encontrar */}
+                  {showClienteDropdown && clienteSearchTerm && filteredClientes.length === 0 && (
+                    <div className="absolute z-50 mt-1 w-full bg-zinc-800 border border-zinc-700 rounded-lg shadow-xl p-4 text-center text-zinc-400">
+                      Nenhum cliente encontrado
+                    </div>
+                  )}
                 </div>
               </div>
 

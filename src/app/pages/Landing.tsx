@@ -1,7 +1,7 @@
 import { useNavigate } from "react-router";
 import { useEffect } from "react";
 import { Button } from "../components/ui/button";
-import { Car, Code } from "lucide-react";
+import { Code } from "lucide-react";
 
 export default function Landing() {
   const navigate = useNavigate();

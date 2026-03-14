@@ -246,14 +246,14 @@ export default function AdminRelatorios() {
                   <Tooltip
                     contentStyle={{
                       backgroundColor: "#18181b",
-                      border: "1px solid #27272a",
+                      border: "1px solid #3f3f46",
                       borderRadius: "8px",
                     }}
                     labelStyle={{ color: "#fff" }}
                   />
                   <Legend />
-                  <Bar dataKey="valor" fill="#10b981" name="Realizado" radius={[4, 4, 0, 0]} />
-                  <Bar dataKey="meta" fill="#3b82f6" name="Meta" radius={[4, 4, 0, 0]} />
+                  <Bar key="bar-valor" dataKey="valor" fill="#10b981" name="Realizado" radius={[4, 4, 0, 0]} />
+                  <Bar key="bar-meta" dataKey="meta" fill="#3b82f6" name="Meta" radius={[4, 4, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             </CardContent>

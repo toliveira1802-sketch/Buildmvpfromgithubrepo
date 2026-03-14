@@ -1,49 +1,100 @@
-import { useState } from "react";
-import { useEffect } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import { Label } from "../components/ui/label";
+import { Checkbox } from "../components/ui/checkbox";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../components/ui/card";
-import { Code, Lock, Mail, ArrowLeft } from "lucide-react";
+import { Code, Lock, User, ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
+import { projectId, publicAnonKey } from '../../../utils/supabase/info';
 
 export default function DevLogin() {
   const navigate = useNavigate();
-  const [email, setEmail] = useState("");
+  const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const [rememberMe, setRememberMe] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
     document.title = "Dev Login - Doctor Auto";
   }, []);
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!email || !password) {
+    if (!username || !password) {
       toast.error("Preencha todos os campos");
       return;
     }
 
     setIsLoading(true);
 
-    // Simulação de login do desenvolvedor
-    setTimeout(() => {
-      if (email.includes("dev") || email.includes("admin")) {
-        localStorage.setItem("dap-user", JSON.stringify({
-          name: "Desenvolvedor",
-          email: email,
-          role: "dev",
-          permissions: ["full-access", "database", "settings", "users"]
-        }));
-        toast.success("Acesso do Desenvolvedor Autorizado");
-        navigate("/dev-dashboard");
-      } else {
-        toast.error("Credenciais de desenvolvedor inválidas");
+    try {
+      // Valida formato: Dev_PrimeiroNome
+      if (!username.includes("_")) {
+        toast.error("Nome inválido. Use o formato: Dev_seu_nome");
         setIsLoading(false);
+        return;
       }
-    }, 1000);
+
+      const [role, firstName] = username.split("_");
+
+      // Verifica se o formato é correto: Dev_PrimeiroNome
+      if (role.toLowerCase() !== "dev") {
+        toast.error("Nome inválido. Use o formato: Dev_seu_nome");
+        setIsLoading(false);
+        return;
+      }
+
+      // Chama o backend para autenticar
+      const response = await fetch(`https://${projectId}.supabase.co/functions/v1/make-server-0092e077/auth/login-dev`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${publicAnonKey}`
+        },
+        body: JSON.stringify({
+          username: username,
+          password: password
+        })
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        setIsLoading(false);
+        throw new Error(data.error || 'Erro ao fazer login');
+      }
+
+      const userData = {
+        name: firstName.charAt(0).toUpperCase() + firstName.slice(1),
+        username: username,
+        role: "dev",
+        firstName: firstName,
+        permissions: ["full-access", "database", "settings", "users"],
+        userId: data.userId
+      };
+
+      // Salva no localStorage (ou sessionStorage se não marcar "lembrar de mim")
+      const storage = rememberMe ? localStorage : sessionStorage;
+      storage.setItem("dap-user", JSON.stringify(userData));
+      if (data.sessionToken) {
+        storage.setItem("dap-token", data.sessionToken);
+      }
+
+      setIsLoading(false);
+      toast.success(`Acesso do Desenvolvedor Autorizado - Bem-vindo, ${userData.name}!`);
+      
+      // Pequeno delay para garantir que o toast seja mostrado antes de navegar
+      setTimeout(() => {
+        navigate("/dev-dashboard");
+      }, 500);
+    } catch (error: any) {
+      console.error('Login error:', error);
+      toast.error(error.message || 'Credenciais de desenvolvedor inválidas');
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -78,20 +129,23 @@ export default function DevLogin() {
           <CardContent>
             <form onSubmit={handleLogin} className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="email" className="text-zinc-200">
-                  Email
+                <Label htmlFor="username" className="text-zinc-200">
+                  Nome
                 </Label>
                 <div className="relative">
-                  <Mail className="absolute left-3 top-3 h-5 w-5 text-zinc-500" />
+                  <User className="absolute left-3 top-3 h-5 w-5 text-zinc-500" />
                   <Input
-                    id="email"
-                    type="email"
-                    placeholder="dev@doctorauto.com"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
+                    id="username"
+                    type="text"
+                    placeholder="Dev_thales"
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value)}
                     className="pl-10 bg-zinc-800 border-zinc-700 text-white placeholder:text-zinc-500"
                   />
                 </div>
+                <p className="text-xs text-zinc-500">
+                  Formato: Dev_seu_nome
+                </p>
               </div>
 
               <div className="space-y-2">
@@ -119,6 +173,21 @@ export default function DevLogin() {
                     className="pl-10 bg-zinc-800 border-zinc-700 text-white placeholder:text-zinc-500"
                   />
                 </div>
+              </div>
+
+              {/* Lembrar de mim */}
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="remember"
+                  checked={rememberMe}
+                  onCheckedChange={(checked) => setRememberMe(checked as boolean)}
+                />
+                <label
+                  htmlFor="remember"
+                  className="text-sm text-zinc-300 cursor-pointer"
+                >
+                  Lembrar de mim
+                </label>
               </div>
 
               <Button

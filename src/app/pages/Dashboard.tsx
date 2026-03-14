@@ -12,60 +12,43 @@ export default function Dashboard() {
   const kpis = [
     { 
       title: "Veículos no Pátio", 
-      value: "23", 
-      change: "+5 hoje",
+      value: "0", 
+      change: "Sem dados",
       icon: Car, 
       color: "text-blue-500",
       bgColor: "bg-blue-500/10"
     },
     { 
       title: "OS Abertas", 
-      value: "18", 
-      change: "4 aguardando aprovação",
+      value: "0", 
+      change: "Sem dados",
       icon: FileText, 
       color: "text-purple-500",
       bgColor: "bg-purple-500/10"
     },
     { 
       title: "Faturamento Mês", 
-      value: "R$ 147.500", 
-      change: "+15% vs mês anterior",
+      value: "R$ 0,00", 
+      change: "Sem dados",
       icon: DollarSign, 
       color: "text-green-500",
       bgColor: "bg-green-500/10"
     },
     { 
       title: "Ticket Médio", 
-      value: "R$ 3.450", 
-      change: "Meta: R$ 3.500",
+      value: "R$ 0,00", 
+      change: "Sem dados",
       icon: TrendingUp, 
       color: "text-orange-500",
       bgColor: "bg-orange-500/10"
     },
   ];
 
-  const statusData = [
-    { name: "Diagnóstico", value: 4, color: "#8b5cf6" },
-    { name: "Orçamento", value: 3, color: "#3b82f6" },
-    { name: "Aguardando Aprovação", value: 4, color: "#f59e0b" },
-    { name: "Em Execução", value: 5, color: "#10b981" },
-    { name: "Pronto", value: 2, color: "#06b6d4" },
-  ];
+  const statusData: Array<{ name: string; value: number; color: string }> = [];
 
-  const faturamentoMensal = [
-    { mes: "Out", valor: 120000 },
-    { mes: "Nov", valor: 135000 },
-    { mes: "Dez", valor: 128000 },
-    { mes: "Jan", valor: 142000 },
-    { mes: "Fev", valor: 155000 },
-    { mes: "Mar", valor: 147500 },
-  ];
+  const faturamentoMensal: Array<{ mes: string; valor: number }> = [];
 
-  const alertas = [
-    { tipo: "warning", mensagem: "3 OS aguardando aprovação há mais de 24h", icon: Clock },
-    { tipo: "success", mensagem: "2 veículos prontos para retirada", icon: CheckCircle2 },
-    { tipo: "error", mensagem: "1 OS parada há mais de 48h", icon: AlertCircle },
-  ];
+  const alertas: Array<{ tipo: string; mensagem: string; icon: any }> = [];
 
   return (
     <AdminLayout>
@@ -105,22 +88,29 @@ export default function Dashboard() {
             <CardDescription>Itens que requerem atenção imediata</CardDescription>
           </CardHeader>
           <CardContent className="space-y-3">
-            {alertas.map((alerta, idx) => {
-              const Icon = alerta.icon;
-              const colors = {
-                warning: "text-orange-500 bg-orange-500/10",
-                success: "text-green-500 bg-green-500/10",
-                error: "text-red-500 bg-red-500/10",
-              };
-              return (
-                <div key={idx} className="flex items-center gap-3 p-3 rounded-lg border border-border">
-                  <div className={`p-2 rounded-lg ${colors[alerta.tipo as keyof typeof colors]}`}>
-                    <Icon className="size-5" />
+            {alertas.length === 0 ? (
+              <div className="text-center py-8 text-zinc-500">
+                <AlertCircle className="h-12 w-12 mx-auto mb-2 opacity-50" />
+                <p>Nenhum alerta no momento</p>
+              </div>
+            ) : (
+              alertas.map((alerta, idx) => {
+                const Icon = alerta.icon;
+                const colors = {
+                  warning: "text-orange-500 bg-orange-500/10",
+                  success: "text-green-500 bg-green-500/10",
+                  error: "text-red-500 bg-red-500/10",
+                };
+                return (
+                  <div key={idx} className="flex items-center gap-3 p-3 rounded-lg border border-border">
+                    <div className={`p-2 rounded-lg ${colors[alerta.tipo as keyof typeof colors]}`}>
+                      <Icon className="size-5" />
+                    </div>
+                    <span className="text-sm">{alerta.mensagem}</span>
                   </div>
-                  <span className="text-sm">{alerta.mensagem}</span>
-                </div>
-              );
-            })}
+                );
+              })
+            )}
           </CardContent>
         </Card>
 
@@ -173,7 +163,7 @@ export default function Dashboard() {
                     }}
                     formatter={(value) => `R$ ${Number(value).toLocaleString('pt-BR')}`}
                   />
-                  <Bar dataKey="valor" fill="#8b5cf6" radius={[8, 8, 0, 0]} />
+                  <Bar key="bar-faturamento" dataKey="valor" fill="#8b5cf6" radius={[8, 8, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             </CardContent>

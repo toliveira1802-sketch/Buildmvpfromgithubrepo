@@ -46,6 +46,8 @@ export default function AdminClientes() {
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState("");
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [editingCliente, setEditingCliente] = useState<Cliente | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
   const [formData, setFormData] = useState({
@@ -144,6 +146,34 @@ export default function AdminClientes() {
     setClientes([...clientes, newCliente]);
     toast.success("Cliente cadastrado com sucesso!");
     setIsCreateDialogOpen(false);
+    resetForm();
+  };
+
+  const handleEditCliente = (cliente: Cliente) => {
+    setEditingCliente(cliente);
+    setFormData({
+      nome: cliente.nome,
+      cpf: cliente.cpf,
+      telefone: cliente.telefone,
+      email: cliente.email,
+      endereco: cliente.endereco,
+      cidade: cliente.cidade,
+    });
+    setIsEditDialogOpen(true);
+  };
+
+  const handleUpdateCliente = () => {
+    if (!editingCliente) return;
+
+    setClientes(clientes.map(c => 
+      c.id === editingCliente.id 
+        ? { ...c, ...formData }
+        : c
+    ));
+    
+    toast.success("Cliente atualizado com sucesso!");
+    setIsEditDialogOpen(false);
+    setEditingCliente(null);
     resetForm();
   };
 
@@ -333,6 +363,7 @@ export default function AdminClientes() {
                             variant="ghost"
                             size="sm"
                             className="hover:bg-zinc-800"
+                            onClick={() => handleEditCliente(cliente)}
                           >
                             <Edit2 className="h-4 w-4 text-green-500" />
                           </Button>
@@ -437,6 +468,101 @@ export default function AdminClientes() {
               className="bg-red-600 hover:bg-red-700"
             >
               Cadastrar Cliente
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Dialog */}
+      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+        <DialogContent className="max-w-2xl bg-zinc-900 border-zinc-800 text-white">
+          <DialogHeader>
+            <DialogTitle>Editar Cliente</DialogTitle>
+            <DialogDescription className="text-zinc-400">
+              Atualize as informações do cliente
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div className="col-span-2">
+              <Label className="text-zinc-300">Nome Completo *</Label>
+              <Input
+                value={formData.nome}
+                onChange={(e) => setFormData({ ...formData, nome: e.target.value })}
+                placeholder="Nome completo do cliente"
+                className="bg-zinc-800 border-zinc-700 text-white"
+              />
+            </div>
+
+            <div>
+              <Label className="text-zinc-300">CPF *</Label>
+              <Input
+                value={formData.cpf}
+                onChange={(e) => setFormData({ ...formData, cpf: e.target.value })}
+                placeholder="000.000.000-00"
+                className="bg-zinc-800 border-zinc-700 text-white"
+              />
+            </div>
+
+            <div>
+              <Label className="text-zinc-300">Telefone *</Label>
+              <Input
+                value={formData.telefone}
+                onChange={(e) => setFormData({ ...formData, telefone: e.target.value })}
+                placeholder="(00) 00000-0000"
+                className="bg-zinc-800 border-zinc-700 text-white"
+              />
+            </div>
+
+            <div className="col-span-2">
+              <Label className="text-zinc-300">Email</Label>
+              <Input
+                type="email"
+                value={formData.email}
+                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                placeholder="email@exemplo.com"
+                className="bg-zinc-800 border-zinc-700 text-white"
+              />
+            </div>
+
+            <div className="col-span-2">
+              <Label className="text-zinc-300">Endereço</Label>
+              <Input
+                value={formData.endereco}
+                onChange={(e) => setFormData({ ...formData, endereco: e.target.value })}
+                placeholder="Rua, número, bairro"
+                className="bg-zinc-800 border-zinc-700 text-white"
+              />
+            </div>
+
+            <div className="col-span-2">
+              <Label className="text-zinc-300">Cidade/Estado</Label>
+              <Input
+                value={formData.cidade}
+                onChange={(e) => setFormData({ ...formData, cidade: e.target.value })}
+                placeholder="Cidade - UF"
+                className="bg-zinc-800 border-zinc-700 text-white"
+              />
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setIsEditDialogOpen(false);
+                resetForm();
+              }}
+              className="border-zinc-700 text-zinc-300 hover:bg-zinc-800"
+            >
+              Cancelar
+            </Button>
+            <Button
+              onClick={handleUpdateCliente}
+              disabled={!formData.nome || !formData.cpf || !formData.telefone}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              Atualizar Cliente
             </Button>
           </DialogFooter>
         </DialogContent>

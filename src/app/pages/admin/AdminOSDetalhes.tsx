@@ -20,6 +20,10 @@ import { Button } from "../../components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../../components/ui/card";
 import { Badge } from "../../components/ui/badge";
 import { Textarea } from "../../components/ui/textarea";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "../../components/ui/dialog";
+import { Label } from "../../components/ui/label";
+import { Input } from "../../components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../../components/ui/select";
 import { toast } from "sonner";
 import AdminLayout from "../../components/AdminLayout";
 
@@ -27,6 +31,8 @@ export default function AdminOSDetalhes() {
   const { id } = useParams();
   const navigate = useNavigate();
   const [observacoes, setObservacoes] = useState("");
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [editStatus, setEditStatus] = useState("");
 
   // Mock data
   const os = {
@@ -121,6 +127,15 @@ export default function AdminOSDetalhes() {
     toast.error("Ordem de Serviço cancelada!");
   };
 
+  const handleEditStatus = () => {
+    if (editStatus) {
+      toast.success(`Status alterado para ${editStatus}!`);
+      setIsEditDialogOpen(false);
+    } else {
+      toast.error("Selecione um status válido!");
+    }
+  };
+
   return (
     <AdminLayout>
       <div className="container mx-auto p-6 space-y-6">
@@ -143,7 +158,7 @@ export default function AdminOSDetalhes() {
             </div>
           </div>
           <div className="flex gap-2">
-            <Button variant="outline" className="border-zinc-700">
+            <Button variant="outline" className="border-zinc-700" onClick={() => setIsEditDialogOpen(true)}>
               <Edit2 className="h-4 w-4 mr-2" />
               Editar
             </Button>
@@ -450,6 +465,50 @@ export default function AdminOSDetalhes() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Edit Dialog */}
+      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Editar Ordem de Serviço</DialogTitle>
+            <DialogDescription>
+              Altere o status da ordem de serviço.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <Label htmlFor="status">Status</Label>
+            <Select
+              value={editStatus}
+              onValueChange={setEditStatus}
+              defaultValue={os.status}
+            >
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Selecione o status">
+                  {os.status}
+                </SelectValue>
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="Aguardando">Aguardando</SelectItem>
+                <SelectItem value="Em Andamento">Em Andamento</SelectItem>
+                <SelectItem value="Concluído">Concluído</SelectItem>
+                <SelectItem value="Cancelado">Cancelado</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setIsEditDialogOpen(false)}
+            >
+              Cancelar
+            </Button>
+            <Button type="button" onClick={handleEditStatus}>
+              Salvar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </AdminLayout>
   );
 }
