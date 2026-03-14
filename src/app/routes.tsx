@@ -7,6 +7,11 @@ import DevDashboard from "./pages/DevDashboard";
 import DevTables from "./pages/DevTables";
 import DevUsers from "./pages/DevUsers";
 import DevDatabase from "./pages/DevDatabase";
+import DevApis from "./pages/DevApis";
+import DevLogs from "./pages/DevLogs";
+import DevPermissions from "./pages/DevPermissions";
+import DevSettings from "./pages/DevSettings";
+import DevDocs from "./pages/DevDocs";
 import Dashboard from "./pages/Dashboard";
 import PatioKanban from "./pages/PatioKanban";
 import ProtectedRoute from "./components/ProtectedRoute";
@@ -80,6 +85,31 @@ export const router = createBrowserRouter([
         Component: DevDatabase,
       },
     ],
+  },
+  {
+    path: "/dev-apis",
+    Component: ProtectedRoute,
+    children: [{ index: true, Component: DevApis }],
+  },
+  {
+    path: "/dev-logs",
+    Component: ProtectedRoute,
+    children: [{ index: true, Component: DevLogs }],
+  },
+  {
+    path: "/dev-permissions",
+    Component: ProtectedRoute,
+    children: [{ index: true, Component: DevPermissions }],
+  },
+  {
+    path: "/dev-settings",
+    Component: ProtectedRoute,
+    children: [{ index: true, Component: DevSettings }],
+  },
+  {
+    path: "/dev-docs",
+    Component: ProtectedRoute,
+    children: [{ index: true, Component: DevDocs }],
   },
   // Admin Routes (Dashboard Operacional)
   {
