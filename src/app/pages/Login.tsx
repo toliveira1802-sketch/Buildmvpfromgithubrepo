@@ -28,7 +28,7 @@ export default function Login() {
       icon: UserCircle2, 
       color: "from-purple-500 to-pink-500",
       description: "Administração e relatórios",
-      route: "/staff-gestao"
+      route: "/gestao/visao-geral"
     },
     { 
       id: "Consultor", 
@@ -36,7 +36,7 @@ export default function Login() {
       icon: Users, 
       color: "from-blue-500 to-cyan-500",
       description: "Atendimento e vendas",
-      route: "/staff-consultor"
+      route: "/dashboard"
     },
     { 
       id: "Mecanico", 
@@ -44,7 +44,7 @@ export default function Login() {
       icon: Wrench, 
       color: "from-orange-500 to-red-500",
       description: "Execução de serviços",
-      route: "/staff-mecanico"
+      route: "/patio"
     },
   ];
 
@@ -80,6 +80,8 @@ export default function Login() {
         return;
       }
 
+      console.log('🔐 Tentando autenticar:', username, 'como', selectedRole);
+
       // Chama o backend para autenticar
       const response = await fetch(`https://${projectId}.supabase.co/functions/v1/make-server-0092e077/auth/login-staff`, {
         method: 'POST',
@@ -95,11 +97,15 @@ export default function Login() {
       });
 
       const data = await response.json();
+      console.log('📡 Resposta do backend:', { status: response.status, data });
 
       if (!response.ok) {
+        console.error('❌ Login falhou:', data.error);
         setIsLoading(false);
         throw new Error(data.error || 'Erro ao fazer login');
       }
+
+      console.log('✅ Login bem-sucedido!');
 
       const selectedRoleData = roles.find(r => r.id === selectedRole);
       
@@ -120,15 +126,20 @@ export default function Login() {
         storage.setItem("dap-token", data.sessionToken);
       }
 
-      setIsLoading(false);
+      console.log('💾 Dados salvos no storage:', userData);
+      console.log('🔑 Token salvo:', data.sessionToken?.substring(0, 20) + '...');
+
       toast.success(`Bem-vindo(a), ${userData.name}!`);
       
-      // Pequeno delay para garantir que o toast seja mostrado antes de navegar
-      setTimeout(() => {
-        navigate(selectedRoleData?.route || "/dashboard");
-      }, 500);
+      const routeToNavigate = selectedRoleData?.route || "/dashboard";
+      console.log('🚀 Navegando para:', routeToNavigate);
+      
+      // Navega IMEDIATAMENTE sem setTimeout
+      setIsLoading(false);
+      navigate(routeToNavigate, { replace: true });
+      
     } catch (error: any) {
-      console.error('Login error:', error);
+      console.error('❌ Erro no login:', error);
       toast.error(error.message || 'Erro ao fazer login');
       setIsLoading(false);
     }

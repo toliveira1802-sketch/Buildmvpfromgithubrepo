@@ -47,6 +47,8 @@ export default function DevLogin() {
         return;
       }
 
+      console.log('🔐 Tentando autenticar:', username);
+
       // Chama o backend para autenticar
       const response = await fetch(`https://${projectId}.supabase.co/functions/v1/make-server-0092e077/auth/login-dev`, {
         method: 'POST',
@@ -61,11 +63,15 @@ export default function DevLogin() {
       });
 
       const data = await response.json();
+      console.log('📡 Resposta do backend:', { status: response.status, data });
 
       if (!response.ok) {
+        console.error('❌ Login falhou:', data.error);
         setIsLoading(false);
         throw new Error(data.error || 'Erro ao fazer login');
       }
+
+      console.log('✅ Login bem-sucedido!');
 
       const userData = {
         name: firstName.charAt(0).toUpperCase() + firstName.slice(1),
@@ -83,15 +89,19 @@ export default function DevLogin() {
         storage.setItem("dap-token", data.sessionToken);
       }
 
-      setIsLoading(false);
+      console.log('💾 Dados salvos no storage:', userData);
+      console.log('🔑 Token salvo:', data.sessionToken?.substring(0, 20) + '...');
+
       toast.success(`Acesso do Desenvolvedor Autorizado - Bem-vindo, ${userData.name}!`);
       
-      // Pequeno delay para garantir que o toast seja mostrado antes de navegar
-      setTimeout(() => {
-        navigate("/dev-dashboard");
-      }, 500);
+      console.log('🚀 Navegando para /dev-dashboard...');
+      
+      // Navega IMEDIATAMENTE sem setTimeout
+      setIsLoading(false);
+      navigate("/dev-dashboard", { replace: true });
+      
     } catch (error: any) {
-      console.error('Login error:', error);
+      console.error('❌ Erro no login:', error);
       toast.error(error.message || 'Credenciais de desenvolvedor inválidas');
       setIsLoading(false);
     }
