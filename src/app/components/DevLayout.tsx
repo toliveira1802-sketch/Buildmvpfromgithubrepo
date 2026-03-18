@@ -7,18 +7,38 @@ import {
   Users, 
   LogOut,
   FileCode,
-  Server,
   Activity,
   Shield,
   Menu,
   X,
-  LayoutDashboard
+  LayoutDashboard,
+  BookOpen,
+  Brain,
+  Sparkles,
+  Cpu,
+  Wrench,
+  UserCircle2,
+  Car,
+  UserCircle,
+  Key,
+  FileStack
 } from "lucide-react";
 import { Button } from "./ui/button";
 import { cn } from "./ui/utils";
 
 interface DevLayoutProps {
   children: ReactNode;
+}
+
+interface MenuItem {
+  path: string;
+  label: string;
+  icon: any;
+}
+
+interface MenuSection {
+  title?: string;
+  items: MenuItem[];
 }
 
 export default function DevLayout({ children }: DevLayoutProps) {
@@ -28,27 +48,139 @@ export default function DevLayout({ children }: DevLayoutProps) {
 
   const handleLogout = () => {
     localStorage.removeItem("dap-user");
+    sessionStorage.removeItem("dap-user");
+    localStorage.removeItem("dap-token");
+    sessionStorage.removeItem("dap-token");
     navigate("/");
   };
 
-  const menuItems = [
-    { path: "/dev-dashboard", label: "Dashboard", icon: LayoutDashboard },
-    { path: "/dev-tables", label: "Gerenciar Tabelas", icon: Table },
-    { path: "/dev-users", label: "Gerenciar Usuários", icon: Users },
-    { path: "/dev-database", label: "Banco de Dados", icon: Database },
-    { path: "/dev-apis", label: "APIs & Integrações", icon: Server },
-    { path: "/dev-logs", label: "Logs do Sistema", icon: Activity },
-    { path: "/dev-permissions", label: "Permissões", icon: Shield },
-    { path: "/dev-settings", label: "Configurações", icon: Settings },
-    { path: "/dev-docs", label: "Documentação", icon: FileCode },
+  // Estrutura de menu organizada por seções
+  const menuSections: MenuSection[] = [
+    {
+      title: "SISTEMA",
+      items: [
+        { path: "/dev-logs", label: "Logs", icon: Activity },
+        { path: "/dev-configuracoes", label: "Configurações", icon: Settings },
+        { path: "/dev-documentacao", label: "Documentação", icon: BookOpen },
+        { path: "/dev-api", label: "API", icon: FileStack },
+        { path: "/dev-permissoes", label: "Permissões", icon: Key },
+      ]
+    },
+    {
+      title: "IA",
+      items: [
+        { path: "/ia-qg", label: "IA QG", icon: Brain },
+        { path: "/dev-perfil-ia", label: "Perfil IA", icon: Sparkles },
+        { path: "/dev-ia-portal", label: "IA Portal", icon: Cpu },
+      ]
+    },
+    {
+      title: "DADOS",
+      items: [
+        { path: "/dev-tables", label: "Tables", icon: Table },
+        { path: "/dev-users", label: "Users", icon: Users },
+        { path: "/dev-database", label: "Database", icon: Database },
+      ]
+    },
+    {
+      items: [
+        { path: "/dev-processos", label: "Processos", icon: Activity },
+        { path: "/dev-ferramentas", label: "Ferramentas", icon: Wrench },
+      ]
+    }
   ];
+
+  // Links para outras sidebars
+  const otherSidebars = [
+    { path: "/gestao/visao-geral", label: "SIDEBAR GESTÃO", icon: UserCircle2 },
+    { path: "/dashboard", label: "SIDEBAR CONSULTORES", icon: Users },
+    { path: "/patio", label: "SIDEBAR MECÂNICOS", icon: Wrench },
+    { path: "/", label: "SIDEBAR CLIENTE", icon: Car },
+  ];
+
+  const renderMenuSections = (onItemClick?: () => void) => (
+    <>
+      {/* Painel Principal */}
+      <button
+        onClick={() => {
+          navigate("/dev-dashboard");
+          onItemClick?.();
+        }}
+        className={cn(
+          "w-full flex items-center justify-center gap-2 px-4 py-3 rounded-full transition-all text-sm font-medium mb-6",
+          location.pathname === "/dev-dashboard"
+            ? "bg-red-600 text-white"
+            : "text-zinc-400 hover:bg-zinc-800 hover:text-white border border-zinc-700"
+        )}
+      >
+        <LayoutDashboard className="size-4" />
+        <span>/dev/painel</span>
+      </button>
+
+      {/* Seções do Menu */}
+      {menuSections.map((section, sectionIdx) => (
+        <div key={`section-${sectionIdx}`} className="mb-6">
+          {section.title && (
+            <h3 className="text-xs font-semibold text-zinc-500 uppercase tracking-wider mb-2 px-3">
+              {section.title}
+            </h3>
+          )}
+          <div className="space-y-1">
+            {section.items.map((item) => {
+              const Icon = item.icon;
+              const isActive = location.pathname === item.path;
+              return (
+                <button
+                  key={item.path}
+                  onClick={() => {
+                    navigate(item.path);
+                    onItemClick?.();
+                  }}
+                  className={cn(
+                    "w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-full transition-all text-sm font-medium",
+                    isActive
+                      ? "bg-red-600 text-white"
+                      : "text-zinc-400 hover:bg-zinc-800 hover:text-white border border-zinc-700"
+                  )}
+                >
+                  <Icon className="size-4 flex-shrink-0" />
+                  <span className="truncate">{item.label}</span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      ))}
+
+      {/* Divider */}
+      <div className="border-t border-zinc-800 my-6"></div>
+
+      {/* Links para outras sidebars */}
+      <div className="space-y-2">
+        {otherSidebars.map((sidebar) => {
+          const Icon = sidebar.icon;
+          return (
+            <button
+              key={sidebar.path}
+              onClick={() => {
+                navigate(sidebar.path);
+                onItemClick?.();
+              }}
+              className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-full transition-all text-sm font-medium text-zinc-400 hover:bg-zinc-800 hover:text-white border border-zinc-700"
+            >
+              <Icon className="size-4 flex-shrink-0" />
+              <span className="truncate text-xs uppercase">{sidebar.label}</span>
+            </button>
+          );
+        })}
+      </div>
+    </>
+  );
 
   return (
     <div className="min-h-screen bg-black flex">
       {/* Sidebar Desktop */}
-      <aside className={cn(
-        "hidden md:flex flex-col w-64 bg-zinc-900 border-r border-zinc-800"
-      )}>
+      <aside className="hidden md:flex flex-col w-64 bg-zinc-900 border-r border-zinc-800">
         <div className="p-6 border-b border-zinc-800">
           <div className="flex items-center gap-3">
             <img 
@@ -67,26 +199,8 @@ export default function DevLayout({ children }: DevLayoutProps) {
           </div>
         </div>
 
-        <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
-          {menuItems.map((item) => {
-            const Icon = item.icon;
-            const isActive = location.pathname === item.path;
-            return (
-              <button
-                key={item.path}
-                onClick={() => navigate(item.path)}
-                className={cn(
-                  "w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all text-sm font-medium",
-                  isActive
-                    ? "bg-red-600 text-white"
-                    : "text-zinc-400 hover:bg-zinc-800 hover:text-white"
-                )}
-              >
-                <Icon className="size-4 flex-shrink-0" />
-                <span className="truncate">{item.label}</span>
-              </button>
-            );
-          })}
+        <nav className="flex-1 p-4 overflow-y-auto">
+          {renderMenuSections()}
         </nav>
 
         <div className="p-4 border-t border-zinc-800">
@@ -152,29 +266,8 @@ export default function DevLayout({ children }: DevLayoutProps) {
               </Button>
             </div>
 
-            <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
-              {menuItems.map((item) => {
-                const Icon = item.icon;
-                const isActive = location.pathname === item.path;
-                return (
-                  <button
-                    key={item.path}
-                    onClick={() => {
-                      navigate(item.path);
-                      setSidebarOpen(false);
-                    }}
-                    className={cn(
-                      "w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all text-sm font-medium",
-                      isActive
-                        ? "bg-red-600 text-white"
-                        : "text-zinc-400 hover:bg-zinc-800 hover:text-white"
-                    )}
-                  >
-                    <Icon className="size-4 flex-shrink-0" />
-                    <span className="truncate">{item.label}</span>
-                  </button>
-                );
-              })}
+            <nav className="flex-1 p-4 overflow-y-auto">
+              {renderMenuSections(() => setSidebarOpen(false))}
             </nav>
 
             <div className="p-4 border-t border-zinc-800">

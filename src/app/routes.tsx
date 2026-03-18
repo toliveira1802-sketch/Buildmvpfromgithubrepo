@@ -39,6 +39,15 @@ import DevPerfilIA from "./pages/dev/DevPerfilIA";
 import GestaoFornecedores from "./pages/gestao/GestaoFornecedores";
 import AnalyticsFunil from "./pages/analytics/AnalyticsFunil";
 
+// NOVAS PÁGINAS DEV
+import DevLogs from "./pages/dev/DevLogs";
+import DevConfiguracoes from "./pages/dev/DevConfiguracoes";
+import DevDocumentacao from "./pages/dev/DevDocumentacao";
+import DevAPI from "./pages/dev/DevAPI";
+import DevPermissoes from "./pages/dev/DevPermissoes";
+import DevProcessos from "./pages/dev/DevProcessos";
+import DevFerramentas from "./pages/dev/DevFerramentas";
+
 // NOVAS PÁGINAS - GESTÃO AVANÇADA
 import AdminEstoque from "./pages/admin/AdminEstoque";
 import AdminCompras from "./pages/admin/AdminCompras";
@@ -607,6 +616,77 @@ export const router = createBrowserRouter([
       {
         index: true,
         Component: AdminAjuda,
+      },
+    ],
+  },
+  // NOVAS ROTAS - DEV
+  {
+    path: "/dev-logs",
+    Component: ProtectedRoute,
+    children: [
+      {
+        index: true,
+        Component: DevLogs,
+      },
+    ],
+  },
+  {
+    path: "/dev-configuracoes",
+    Component: ProtectedRoute,
+    children: [
+      {
+        index: true,
+        Component: DevConfiguracoes,
+      },
+    ],
+  },
+  {
+    path: "/dev-documentacao",
+    Component: ProtectedRoute,
+    children: [
+      {
+        index: true,
+        Component: DevDocumentacao,
+      },
+    ],
+  },
+  {
+    path: "/dev-api",
+    Component: ProtectedRoute,
+    children: [
+      {
+        index: true,
+        Component: DevAPI,
+      },
+    ],
+  },
+  {
+    path: "/dev-permissoes",
+    Component: ProtectedRoute,
+    children: [
+      {
+        index: true,
+        Component: DevPermissoes,
+      },
+    ],
+  },
+  {
+    path: "/dev-processos",
+    Component: ProtectedRoute,
+    children: [
+      {
+        index: true,
+        Component: DevProcessos,
+      },
+    ],
+  },
+  {
+    path: "/dev-ferramentas",
+    Component: ProtectedRoute,
+    children: [
+      {
+        index: true,
+        Component: DevFerramentas,
       },
     ],
   },

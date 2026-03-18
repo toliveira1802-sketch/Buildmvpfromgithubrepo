@@ -60,10 +60,10 @@ export default function Dashboard() {
 
         {/* KPIs */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          {kpis.map((kpi) => {
+          {kpis.map((kpi, index) => {
             const Icon = kpi.icon;
             return (
-              <Card key={kpi.title}>
+              <Card key={`kpi-${index}-${kpi.title}`}>
                 <CardHeader className="flex flex-row items-center justify-between pb-2">
                   <CardTitle className="text-sm font-medium text-muted-foreground">
                     {kpi.title}
@@ -122,25 +122,34 @@ export default function Dashboard() {
               <CardDescription>OS ativas no pátio</CardDescription>
             </CardHeader>
             <CardContent>
-              <ResponsiveContainer width="100%" height={300}>
-                <PieChart>
-                  <Pie
-                    data={statusData}
-                    cx="50%"
-                    cy="50%"
-                    labelLine={false}
-                    label={({ name, value }) => `${name}: ${value}`}
-                    outerRadius={80}
-                    fill="#8884d8"
-                    dataKey="value"
-                  >
-                    {statusData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.color} />
-                    ))}
-                  </Pie>
-                  <Tooltip />
-                </PieChart>
-              </ResponsiveContainer>
+              {statusData.length === 0 ? (
+                <div className="flex items-center justify-center h-[300px]">
+                  <div className="text-center text-zinc-500">
+                    <AlertCircle className="h-12 w-12 mx-auto mb-2 opacity-50" />
+                    <p>Nenhum dado disponível</p>
+                  </div>
+                </div>
+              ) : (
+                <ResponsiveContainer width="100%" height={300}>
+                  <PieChart>
+                    <Pie
+                      data={statusData}
+                      cx="50%"
+                      cy="50%"
+                      labelLine={false}
+                      label={({ name, value }) => `${name}: ${value}`}
+                      outerRadius={80}
+                      fill="#8884d8"
+                      dataKey="value"
+                    >
+                      {statusData.map((entry, index) => (
+                        <Cell key={`pie-cell-${index}-${entry.name}`} fill={entry.color} />
+                      ))}
+                    </Pie>
+                    <Tooltip />
+                  </PieChart>
+                </ResponsiveContainer>
+              )}
             </CardContent>
           </Card>
 
@@ -150,22 +159,31 @@ export default function Dashboard() {
               <CardDescription>Últimos 6 meses</CardDescription>
             </CardHeader>
             <CardContent>
-              <ResponsiveContainer width="100%" height={300}>
-                <BarChart data={faturamentoMensal}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
-                  <XAxis dataKey="mes" stroke="var(--muted-foreground)" />
-                  <YAxis stroke="var(--muted-foreground)" />
-                  <Tooltip 
-                    contentStyle={{ 
-                      backgroundColor: 'var(--card)', 
-                      border: '1px solid var(--border)',
-                      borderRadius: '8px'
-                    }}
-                    formatter={(value) => `R$ ${Number(value).toLocaleString('pt-BR')}`}
-                  />
-                  <Bar key="bar-faturamento" dataKey="valor" fill="#8b5cf6" radius={[8, 8, 0, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
+              {faturamentoMensal.length === 0 ? (
+                <div className="flex items-center justify-center h-[300px]">
+                  <div className="text-center text-zinc-500">
+                    <AlertCircle className="h-12 w-12 mx-auto mb-2 opacity-50" />
+                    <p>Nenhum dado disponível</p>
+                  </div>
+                </div>
+              ) : (
+                <ResponsiveContainer width="100%" height={300}>
+                  <BarChart data={faturamentoMensal}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
+                    <XAxis dataKey="mes" stroke="var(--muted-foreground)" />
+                    <YAxis stroke="var(--muted-foreground)" />
+                    <Tooltip 
+                      contentStyle={{ 
+                        backgroundColor: 'var(--card)', 
+                        border: '1px solid var(--border)',
+                        borderRadius: '8px'
+                      }}
+                      formatter={(value) => `R$ ${Number(value).toLocaleString('pt-BR')}`}
+                    />
+                    <Bar dataKey="valor" fill="#8b5cf6" radius={[8, 8, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              )}
             </CardContent>
           </Card>
         </div>
