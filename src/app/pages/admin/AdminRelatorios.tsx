@@ -1,437 +1,111 @@
-import { useState, useEffect } from "react";
-import {
-  TrendingUp,
-  DollarSign,
-  Users,
-  Wrench,
-  Calendar,
-  BarChart3,
-  Download,
-  RefreshCw,
-  FileText,
-  PieChart,
-} from "lucide-react";
+﻿import { useState, useEffect } from "react";
+import { FileText, DollarSign, Car, Wrench, RefreshCw, Download } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "../../components/ui/card";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
 import { Button } from "../../components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../../components/ui/card";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "../../components/ui/select";
-import {
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-  PieChart as RechartsPie,
-  Pie,
-  Cell,
-  LineChart,
-  Line,
-  Legend,
-} from "recharts";
-import { toast } from "sonner";
 import AdminLayout from "../../components/AdminLayout";
-import { relatoriosAPI } from "../../services/api";
+import { createClient } from "@supabase/supabase-js";
 
-const COLORS = ['#ef4444', '#f59e0b', '#10b981', '#3b82f6', '#8b5cf6', '#ec4899'];
+const sb = createClient(
+  "https://acuufrgoyjwzlyhopaus.supabase.co",
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFjdXVmcmdveWp3emx5aG9wYXVzIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2ODI2Mjk4OCwiZXhwIjoyMDgzODM4OTg4fQ.mCMQoBXRwSNrd1VgEa1uHCJwP3mcto5xjlt3LF6VUO4"
+);
+
+const PIE_COLORS = ["#8b5cf6","#22c55e","#f59e0b","#3b82f6","#ef4444","#06b6d4","#ec4899"];
 
 export default function AdminRelatorios() {
+  const [loading, setLoading] = useState(true);
   const [periodo, setPeriodo] = useState("mes");
-  const [isLoading, setIsLoading] = useState(false);
+  const [dados, setDados] = useState({ faturamento:0, ticket:0, totalOS:0, concluidas:0, clientes:0 });
+  const [porStatus, setPorStatus] = useState<any[]>([]);
+  const [porMes, setPorMes] = useState<any[]>([]);
 
-  const [faturamentoData, setFaturamentoData] = useState<any[]>([]);
-  const [servicosPopulares, setServicosPopulares] = useState<any[]>([]);
-  const [performanceMecanicos, setPerformanceMecanicos] = useState<any[]>([]);
+  useEffect(() => { load(); }, [periodo]);
 
-  // Dados mockados para demonstração
-  const faturamentoPorMes = [
-    { mes: "Jan", valor: 45000, meta: 50000 },
-    { mes: "Fev", valor: 52000, meta: 50000 },
-    { mes: "Mar", valor: 48000, meta: 50000 },
-    { mes: "Abr", valor: 61000, meta: 55000 },
-    { mes: "Mai", valor: 55000, meta: 55000 },
-    { mes: "Jun", valor: 67000, meta: 60000 },
-  ];
+  async function load() {
+    setLoading(true);
+    const now = new Date();
+    let start: Date;
+    if (periodo==="semana") { start=new Date(now); start.setDate(now.getDate()-7); }
+    else if (periodo==="mes") { start=new Date(now.getFullYear(),now.getMonth(),1); }
+    else { start=new Date(now.getFullYear(),0,1); }
+    const [os, clientes] = await Promise.all([
+      sb.from("06_OS").select("status,valor_total,created_at").gte("created_at",start.toISOString()),
+      sb.from("04_CLIENTS").select("id",{count:"exact",head:true}).gte("created_at",start.toISOString()),
+    ]);
+    const rows = os.data||[];
+    const conc = rows.filter(r=>r.status==="concluido"||r.status==="entregue");
+    const fat = conc.reduce((s,r)=>s+(r.valor_total||0),0);
+    setDados({ faturamento:fat, ticket:conc.length>0?fat/conc.length:0, totalOS:rows.length, concluidas:conc.length, clientes:clientes.count||0 });
+    const counts: Record<string,number>={};
+    rows.forEach(r=>{ counts[r.status]=(counts[r.status]||0)+1; });
+    setPorStatus(Object.entries(counts).map(([n,v],i)=>({ name:n.replace(/_/g," "), value:v, color:PIE_COLORS[i%PIE_COLORS.length] })));
+    const meses: Record<string,number>={};
+    rows.forEach(r=>{ const m=r.created_at?.slice(0,7); if(m) meses[m]=(meses[m]||0)+1; });
+    setPorMes(Object.entries(meses).sort().map(([mes,total])=>({ mes:mes.slice(5), total })));
+    setLoading(false);
+  }
 
-  const servicosMaisRealizados = [
-    { nome: "Troca de Óleo", quantidade: 145 },
-    { nome: "Revisão Completa", quantidade: 89 },
-    { nome: "Alinhamento", quantidade: 76 },
-    { nome: "Balanceamento", quantidade: 72 },
-    { nome: "Troca de Pneus", quantidade: 58 },
-    { nome: "Freios", quantidade: 45 },
-  ];
-
-  const distribuicaoStatus = [
-    { name: "Concluído", value: 245, color: "#10b981" },
-    { name: "Em Andamento", value: 87, color: "#3b82f6" },
-    { name: "Aguardando", value: 43, color: "#f59e0b" },
-    { name: "Cancelado", value: 18, color: "#ef4444" },
-  ];
-
-  const performancePorMecanico = [
-    { nome: "João Silva", osConcluidas: 78, faturamento: 125000 },
-    { nome: "Maria Santos", osConcluidas: 65, faturamento: 98000 },
-    { nome: "Pedro Costa", osConcluidas: 52, faturamento: 82000 },
-    { nome: "Ana Lima", osConcluidas: 45, faturamento: 71000 },
-    { nome: "Carlos Souza", osConcluidas: 38, faturamento: 59000 },
-  ];
-
-  const ticketMedioPorMes = [
-    { mes: "Jan", valor: 850 },
-    { mes: "Fev", valor: 920 },
-    { mes: "Mar", valor: 880 },
-    { mes: "Abr", valor: 1050 },
-    { mes: "Mai", valor: 980 },
-    { mes: "Jun", valor: 1120 },
-  ];
-
-  const loadData = async () => {
-    setIsLoading(true);
-    try {
-      // Tentar carregar dados reais do backend
-      const [faturamento, servicos, mecanicos] = await Promise.all([
-        relatoriosAPI.getFaturamento().catch(() => null),
-        relatoriosAPI.getServicosPopulares().catch(() => null),
-        relatoriosAPI.getPerformanceMecanicos().catch(() => null),
-      ]);
-
-      if (faturamento) setFaturamentoData(faturamento);
-      if (servicos) setServicosPopulares(servicos);
-      if (mecanicos) setPerformanceMecanicos(mecanicos);
-
-      toast.success("Relatórios atualizados!");
-    } catch (error) {
-      console.error("Erro ao carregar relatórios:", error);
-      toast.error("Erro ao carregar relatórios");
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    loadData();
-  }, [periodo]);
-
-  const handleExport = () => {
-    toast.success("Exportando relatório em PDF...");
-    // Implementar exportação real aqui
-  };
-
-  const stats = {
-    faturamentoTotal: faturamentoPorMes.reduce((sum, item) => sum + item.valor, 0),
-    ticketMedio: 980,
-    osRealizadas: 393,
-    crescimento: 15.3,
-  };
+  const fmt = (v:number) => v.toLocaleString("pt-BR",{style:"currency",currency:"BRL"});
+  const pct = (v:number,t:number) => t>0 ? Math.round(v/t*100)+"%" : "0%";
 
   return (
     <AdminLayout>
-      <div className="container mx-auto p-6 space-y-6">
-        {/* Header */}
+      <div className="p-6 space-y-6 max-w-6xl mx-auto">
         <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold text-white">Relatórios</h1>
-            <p className="text-zinc-400 mt-1">
-              Análise completa de desempenho e faturamento
-            </p>
-          </div>
+          <div><h1 className="text-3xl font-bold text-white flex items-center gap-2"><FileText className="h-8 w-8 text-blue-400"/>Relatórios</h1>
+            <p className="text-zinc-400 mt-1">Análise de performance do período</p></div>
           <div className="flex gap-2">
-            <Select value={periodo} onValueChange={setPeriodo}>
-              <SelectTrigger className="w-[180px] bg-zinc-900 border-zinc-700 text-white">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="semana">Última Semana</SelectItem>
-                <SelectItem value="mes">Último Mês</SelectItem>
-                <SelectItem value="trimestre">Último Trimestre</SelectItem>
-                <SelectItem value="semestre">Último Semestre</SelectItem>
-                <SelectItem value="ano">Último Ano</SelectItem>
-              </SelectContent>
-            </Select>
-            <Button variant="outline" onClick={loadData} disabled={isLoading}>
-              <RefreshCw className={`h-4 w-4 mr-2 ${isLoading ? "animate-spin" : ""}`} />
-              Atualizar
-            </Button>
-            <Button onClick={handleExport} className="bg-red-600 hover:bg-red-700">
-              <Download className="h-4 w-4 mr-2" />
-              Exportar PDF
-            </Button>
+            {["semana","mes","ano"].map(p=>(
+              <button key={p} onClick={()=>setPeriodo(p)}
+                className={"px-4 py-1.5 rounded-full text-sm font-medium border transition-colors "+(periodo===p?"bg-blue-600 border-blue-500 text-white":"bg-zinc-800 border-zinc-700 text-zinc-400 hover:text-white")}>
+                {p==="semana"?"7 dias":p==="mes"?"Mês":p==="ano"?"Ano":p}
+              </button>
+            ))}
+            <Button onClick={load} variant="outline" className="border-zinc-700 text-zinc-300"><RefreshCw className={"h-4 w-4"+(loading?" animate-spin":"")}/></Button>
           </div>
         </div>
-
-        {/* KPIs Principais */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <Card className="bg-gradient-to-br from-green-950 to-zinc-900 border-green-800">
-            <CardHeader className="pb-3">
-              <CardDescription className="text-green-300">Faturamento Total</CardDescription>
-              <CardTitle className="text-3xl text-white">
-                {stats.faturamentoTotal.toLocaleString("pt-BR", {
-                  style: "currency",
-                  currency: "BRL",
-                  minimumFractionDigits: 0,
-                })}
-              </CardTitle>
-              <div className="flex items-center gap-1 text-sm text-green-400">
-                <TrendingUp className="h-4 w-4" />
-                +{stats.crescimento}% vs período anterior
-              </div>
-            </CardHeader>
-          </Card>
-
-          <Card className="bg-zinc-900 border-zinc-800">
-            <CardHeader className="pb-3">
-              <CardDescription className="text-zinc-400">Ticket Médio</CardDescription>
-              <CardTitle className="text-3xl text-white">
-                {stats.ticketMedio.toLocaleString("pt-BR", {
-                  style: "currency",
-                  currency: "BRL",
-                })}
-              </CardTitle>
-              <div className="flex items-center gap-1 text-sm text-blue-400">
-                <DollarSign className="h-4 w-4" />
-                Por ordem de serviço
-              </div>
-            </CardHeader>
-          </Card>
-
-          <Card className="bg-zinc-900 border-zinc-800">
-            <CardHeader className="pb-3">
-              <CardDescription className="text-zinc-400">OS Realizadas</CardDescription>
-              <CardTitle className="text-3xl text-white">{stats.osRealizadas}</CardTitle>
-              <div className="flex items-center gap-1 text-sm text-purple-400">
-                <FileText className="h-4 w-4" />
-                Todas concluídas
-              </div>
-            </CardHeader>
-          </Card>
-
-          <Card className="bg-zinc-900 border-zinc-800">
-            <CardHeader className="pb-3">
-              <CardDescription className="text-zinc-400">Taxa de Conversão</CardDescription>
-              <CardTitle className="text-3xl text-white">87.5%</CardTitle>
-              <div className="flex items-center gap-1 text-sm text-orange-400">
-                <BarChart3 className="h-4 w-4" />
-                Orçamento → Aprovação
-              </div>
-            </CardHeader>
-          </Card>
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+          {[
+            { label:"Faturamento", value:fmt(dados.faturamento), icon:DollarSign, color:"text-green-400" },
+            { label:"Ticket Médio", value:fmt(dados.ticket), icon:DollarSign, color:"text-blue-400" },
+            { label:"Total OS", value:dados.totalOS, icon:Car, color:"text-purple-400" },
+            { label:"Concluídas", value:dados.concluidas+" ("+pct(dados.concluidas,dados.totalOS)+")", icon:Wrench, color:"text-emerald-400" },
+            { label:"Novos Clientes", value:dados.clientes, icon:Wrench, color:"text-yellow-400" },
+          ].map((k,i)=>{ const Icon=k.icon; return (
+            <Card key={i} className="bg-zinc-900 border-zinc-800"><CardContent className="pt-4">
+              <Icon className={"h-4 w-4 mb-2 "+k.color}/>
+              <p className={"font-bold "+k.color}>{loading?"—":k.value}</p>
+              <p className="text-zinc-500 text-xs mt-0.5">{k.label}</p>
+            </CardContent></Card>
+          );})}
         </div>
-
-        {/* Gráficos Principais */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Faturamento por Mês */}
-          <Card className="bg-zinc-900 border-zinc-800">
-            <CardHeader>
-              <CardTitle className="text-white flex items-center gap-2">
-                <TrendingUp className="h-5 w-5" />
-                Faturamento Mensal
-              </CardTitle>
-              <CardDescription className="text-zinc-400">
-                Comparativo com meta estabelecida
-              </CardDescription>
-            </CardHeader>
+          <Card className="bg-zinc-900 border-zinc-800"><CardHeader><CardTitle className="text-white">OS por Status</CardTitle></CardHeader>
             <CardContent>
-              <ResponsiveContainer width="100%" height={300}>
-                <BarChart data={faturamentoPorMes}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#27272a" />
-                  <XAxis dataKey="mes" stroke="#71717a" />
-                  <YAxis stroke="#71717a" />
-                  <Tooltip
-                    contentStyle={{
-                      backgroundColor: "#18181b",
-                      border: "1px solid #3f3f46",
-                      borderRadius: "8px",
-                    }}
-                    labelStyle={{ color: "#fff" }}
-                  />
-                  <Legend />
-                  <Bar key="bar-valor" dataKey="valor" fill="#10b981" name="Realizado" radius={[4, 4, 0, 0]} />
-                  <Bar key="bar-meta" dataKey="meta" fill="#3b82f6" name="Meta" radius={[4, 4, 0, 0]} />
+              {porStatus.length===0?<p className="text-zinc-500 text-sm py-8 text-center">Sem dados</p>:(
+              <ResponsiveContainer width="100%" height={220}>
+                <PieChart><Pie data={porStatus} dataKey="value" cx="50%" cy="50%" outerRadius={80} label={({name,value})=>name+" "+value}>
+                  {porStatus.map((e,i)=><Cell key={i} fill={e.color}/>)}
+                </Pie><Tooltip contentStyle={{backgroundColor:"#18181b",border:"1px solid #3f3f46",borderRadius:"8px"}}/></PieChart>
+              </ResponsiveContainer>
+              )}
+            </CardContent>
+          </Card>
+          <Card className="bg-zinc-900 border-zinc-800"><CardHeader><CardTitle className="text-white">OS por Mês</CardTitle></CardHeader>
+            <CardContent>
+              {porMes.length===0?<p className="text-zinc-500 text-sm py-8 text-center">Sem dados</p>:(
+              <ResponsiveContainer width="100%" height={220}>
+                <BarChart data={porMes}><CartesianGrid strokeDasharray="3 3" stroke="#27272a"/>
+                  <XAxis dataKey="mes" tick={{fill:"#71717a",fontSize:11}}/><YAxis tick={{fill:"#71717a",fontSize:11}}/>
+                  <Tooltip contentStyle={{backgroundColor:"#18181b",border:"1px solid #3f3f46",borderRadius:"8px"}}/>
+                  <Bar dataKey="total" fill="#8b5cf6" radius={[4,4,0,0]}/>
                 </BarChart>
               </ResponsiveContainer>
-            </CardContent>
-          </Card>
-
-          {/* Distribuição por Status */}
-          <Card className="bg-zinc-900 border-zinc-800">
-            <CardHeader>
-              <CardTitle className="text-white flex items-center gap-2">
-                <PieChart className="h-5 w-5" />
-                Distribuição por Status
-              </CardTitle>
-              <CardDescription className="text-zinc-400">
-                Total de {distribuicaoStatus.reduce((sum, item) => sum + item.value, 0)} OS
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <ResponsiveContainer width="100%" height={300}>
-                <RechartsPie>
-                  <Pie
-                    data={distribuicaoStatus}
-                    cx="50%"
-                    cy="50%"
-                    labelLine={false}
-                    label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                    outerRadius={100}
-                    fill="#8884d8"
-                    dataKey="value"
-                  >
-                    {distribuicaoStatus.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.color} />
-                    ))}
-                  </Pie>
-                  <Tooltip
-                    contentStyle={{
-                      backgroundColor: "#18181b",
-                      border: "1px solid #27272a",
-                      borderRadius: "8px",
-                    }}
-                  />
-                </RechartsPie>
-              </ResponsiveContainer>
+              )}
             </CardContent>
           </Card>
         </div>
-
-        {/* Serviços Mais Realizados */}
-        <Card className="bg-zinc-900 border-zinc-800">
-          <CardHeader>
-            <CardTitle className="text-white flex items-center gap-2">
-              <Wrench className="h-5 w-5" />
-              Serviços Mais Realizados
-            </CardTitle>
-            <CardDescription className="text-zinc-400">
-              Top 6 serviços no período selecionado
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={servicosMaisRealizados} layout="vertical">
-                <CartesianGrid strokeDasharray="3 3" stroke="#27272a" />
-                <XAxis type="number" stroke="#71717a" />
-                <YAxis dataKey="nome" type="category" stroke="#71717a" width={150} />
-                <Tooltip
-                  contentStyle={{
-                    backgroundColor: "#18181b",
-                    border: "1px solid #27272a",
-                    borderRadius: "8px",
-                  }}
-                  labelStyle={{ color: "#fff" }}
-                />
-                <Bar dataKey="quantidade" fill="#8b5cf6" />
-              </BarChart>
-            </ResponsiveContainer>
-          </CardContent>
-        </Card>
-
-        {/* Performance por Mecânico */}
-        <Card className="bg-zinc-900 border-zinc-800">
-          <CardHeader>
-            <CardTitle className="text-white flex items-center gap-2">
-              <Users className="h-5 w-5" />
-              Performance por Mecânico
-            </CardTitle>
-            <CardDescription className="text-zinc-400">
-              Ranking de produtividade e faturamento
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead className="border-b border-zinc-800">
-                  <tr className="text-left">
-                    <th className="p-4 font-medium text-zinc-300">Posição</th>
-                    <th className="p-4 font-medium text-zinc-300">Mecânico</th>
-                    <th className="p-4 font-medium text-zinc-300">OS Concluídas</th>
-                    <th className="p-4 font-medium text-zinc-300">Faturamento</th>
-                    <th className="p-4 font-medium text-zinc-300">Ticket Médio</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {performancePorMecanico.map((mecanico, index) => (
-                    <tr key={index} className="border-b border-zinc-800 hover:bg-zinc-800/50">
-                      <td className="p-4">
-                        <div
-                          className={`w-8 h-8 rounded-full flex items-center justify-center font-bold ${
-                            index === 0
-                              ? "bg-yellow-500 text-black"
-                              : index === 1
-                              ? "bg-zinc-400 text-black"
-                              : index === 2
-                              ? "bg-orange-600 text-white"
-                              : "bg-zinc-700 text-white"
-                          }`}
-                        >
-                          {index + 1}
-                        </div>
-                      </td>
-                      <td className="p-4 text-white font-medium">{mecanico.nome}</td>
-                      <td className="p-4 text-zinc-300">{mecanico.osConcluidas}</td>
-                      <td className="p-4 text-green-500 font-semibold">
-                        {mecanico.faturamento.toLocaleString("pt-BR", {
-                          style: "currency",
-                          currency: "BRL",
-                          minimumFractionDigits: 0,
-                        })}
-                      </td>
-                      <td className="p-4 text-blue-400">
-                        {(mecanico.faturamento / mecanico.osConcluidas).toLocaleString("pt-BR", {
-                          style: "currency",
-                          currency: "BRL",
-                        })}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Ticket Médio por Mês */}
-        <Card className="bg-zinc-900 border-zinc-800">
-          <CardHeader>
-            <CardTitle className="text-white flex items-center gap-2">
-              <DollarSign className="h-5 w-5" />
-              Evolução do Ticket Médio
-            </CardTitle>
-            <CardDescription className="text-zinc-400">
-              Valor médio por ordem de serviço ao longo do tempo
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <ResponsiveContainer width="100%" height={300}>
-              <LineChart data={ticketMedioPorMes}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#27272a" />
-                <XAxis dataKey="mes" stroke="#71717a" />
-                <YAxis stroke="#71717a" />
-                <Tooltip
-                  contentStyle={{
-                    backgroundColor: "#18181b",
-                    border: "1px solid #27272a",
-                    borderRadius: "8px",
-                  }}
-                  labelStyle={{ color: "#fff" }}
-                />
-                <Line
-                  type="monotone"
-                  dataKey="valor"
-                  stroke="#3b82f6"
-                  strokeWidth={3}
-                  dot={{ fill: "#3b82f6", r: 6 }}
-                  activeDot={{ r: 8 }}
-                />
-              </LineChart>
-            </ResponsiveContainer>
-          </CardContent>
-        </Card>
       </div>
     </AdminLayout>
   );

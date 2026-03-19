@@ -1,398 +1,89 @@
-import { useState } from "react";
-import { Users, TrendingUp, Clock, Award, Target, Zap, Star, Trophy } from "lucide-react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../../components/ui/card";
+﻿import { useState, useEffect } from "react";
+import { BarChart2, Wrench, CheckCircle, Clock, RefreshCw, Trophy } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/card";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
+import { Button } from "../../components/ui/button";
 import { Badge } from "../../components/ui/badge";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "../../components/ui/select";
-import { BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from "recharts";
 import AdminLayout from "../../components/AdminLayout";
+import { createClient } from "@supabase/supabase-js";
 
-interface Mecanico {
-  id: string;
-  nome: string;
-  especialidade: string;
-  osConcluidas: number;
-  tempoMedio: number;
-  eficiencia: number;
-  avaliacao: number;
-  xp: number;
-  nivel: number;
-}
+const sb = createClient(
+  "https://acuufrgoyjwzlyhopaus.supabase.co",
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFjdXVmcmdveWp3emx5aG9wYXVzIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2ODI2Mjk4OCwiZXhwIjoyMDgzODM4OTg4fQ.mCMQoBXRwSNrd1VgEa1uHCJwP3mcto5xjlt3LF6VUO4"
+);
 
 export default function AdminProdutividade() {
-  const [periodo, setPeriodo] = useState("30");
+  const [loading, setLoading] = useState(true);
+  const [mecanicos, setMecanicos] = useState<any[]>([]);
+  const [ranking, setRanking] = useState<any[]>([]);
 
-  const [mecanicos] = useState<Mecanico[]>([
-    {
-      id: "M001",
-      nome: "Carlos Silva",
-      especialidade: "Motor",
-      osConcluidas: 47,
-      tempoMedio: 3.2,
-      eficiencia: 94,
-      avaliacao: 4.8,
-      xp: 3200,
-      nivel: 3,
-    },
-    {
-      id: "M002",
-      nome: "Roberto Santos",
-      especialidade: "Suspensão",
-      osConcluidas: 52,
-      tempoMedio: 2.8,
-      eficiencia: 97,
-      avaliacao: 4.9,
-      xp: 3800,
-      nivel: 3,
-    },
-    {
-      id: "M003",
-      nome: "Fernando Lima",
-      especialidade: "Elétrica",
-      osConcluidas: 38,
-      tempoMedio: 4.1,
-      eficiencia: 88,
-      avaliacao: 4.5,
-      xp: 2400,
-      nivel: 2,
-    },
-    {
-      id: "M004",
-      nome: "André Costa",
-      especialidade: "Freios",
-      osConcluidas: 45,
-      tempoMedio: 2.5,
-      eficiencia: 96,
-      avaliacao: 4.7,
-      xp: 2900,
-      nivel: 3,
-    },
-  ]);
+  useEffect(() => { load(); }, []);
 
-  const produtividadeSemanal = [
-    { semana: "Sem 1", carlos: 12, roberto: 14, fernando: 9, andre: 11 },
-    { semana: "Sem 2", carlos: 11, roberto: 13, fernando: 10, andre: 12 },
-    { semana: "Sem 3", carlos: 13, roberto: 12, fernando: 8, andre: 11 },
-    { semana: "Sem 4", carlos: 11, roberto: 13, fernando: 11, andre: 11 },
-  ];
+  async function load() {
+    setLoading(true);
+    const [mecs, os] = await Promise.all([
+      sb.from("12_MECANICOS").select("id,nome,especialidade,nivel"),
+      sb.from("06_OS").select("mecanico_nome,status,valor_total"),
+    ]);
+    const rows = os.data || [];
+    const mecData = (mecs.data||[]).map(m => {
+      const minhas = rows.filter(r => r.mecanico_nome === m.nome);
+      const conc = minhas.filter(r => r.status==="concluido"||r.status==="entregue");
+      const ativas = minhas.filter(r => ["aprovado","em_execucao"].includes(r.status));
+      const fat = conc.reduce((s,r)=>s+(r.valor_total||0),0);
+      return { ...m, total:minhas.length, concluidas:conc.length, ativas:ativas.length, faturamento:fat };
+    }).sort((a,b)=>b.concluidas-a.concluidas);
+    setMecanicos(mecData);
+    setRanking(mecData.slice(0,5).map(m=>({ name:m.nome.split(" ")[0], concluidas:m.concluidas, ativas:m.ativas })));
+    setLoading(false);
+  }
 
-  const tempoMedioTendencia = [
-    { mes: "Set", tempo: 3.8 },
-    { mes: "Out", tempo: 3.5 },
-    { mes: "Nov", tempo: 3.2 },
-    { mes: "Dez", tempo: 3.0 },
-    { mes: "Jan", tempo: 2.9 },
-    { mes: "Fev", tempo: 3.1 },
-  ];
-
-  const stats = {
-    totalOS: 182,
-    variacao: 12.5,
-    tempoMedioGeral: 3.2,
-    variacaoTempo: -8.3,
-    eficienciaMedia: 93.8,
-    variacaoEficiencia: 5.2,
-    avaliacaoMedia: 4.7,
-  };
-
-  const mecanicoOrdenado = [...mecanicos].sort((a, b) => b.osConcluidas - a.osConcluidas);
-
-  const getEficienciaColor = (eficiencia: number) => {
-    if (eficiencia >= 95) return "text-green-500";
-    if (eficiencia >= 85) return "text-yellow-500";
-    return "text-red-500";
-  };
-
-  const getNivelBadge = (nivel: number) => {
-    const cores = ["bg-zinc-600", "bg-green-600", "bg-blue-600", "bg-purple-600", "bg-yellow-600"];
-    const nomes = ["Iniciante", "Aprendiz", "Profissional", "Especialista", "Mestre"];
-    return { cor: cores[nivel - 1] || cores[0], nome: nomes[nivel - 1] || nomes[0] };
-  };
+  const fmt = (v:number) => v.toLocaleString("pt-BR",{style:"currency",currency:"BRL"});
+  const NIVEL = {junior:"bg-zinc-700",pleno:"bg-blue-900/50",senior:"bg-purple-900/50",master:"bg-yellow-900/50"};
 
   return (
     <AdminLayout>
-      <div className="container mx-auto p-6 space-y-6">
-        {/* Header */}
+      <div className="p-6 space-y-6 max-w-6xl mx-auto">
         <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold text-white flex items-center gap-2">
-              <TrendingUp className="h-8 w-8 text-blue-500" />
-              Produtividade da Equipe
-            </h1>
-            <p className="text-zinc-400 mt-1">
-              Análise de performance e eficiência dos mecânicos
-            </p>
-          </div>
-          <Select value={periodo} onValueChange={setPeriodo}>
-            <SelectTrigger className="w-[180px] bg-zinc-900 border-zinc-700 text-white">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="7">Últimos 7 dias</SelectItem>
-              <SelectItem value="30">Últimos 30 dias</SelectItem>
-              <SelectItem value="90">Últimos 90 dias</SelectItem>
-            </SelectContent>
-          </Select>
+          <div><h1 className="text-3xl font-bold text-white flex items-center gap-2"><BarChart2 className="h-8 w-8 text-purple-400"/>Produtividade</h1>
+            <p className="text-zinc-400 mt-1">Performance por mecânico</p></div>
+          <Button onClick={load} variant="outline" className="border-zinc-700 text-zinc-300"><RefreshCw className={"h-4 w-4"+(loading?" animate-spin":"")}/></Button>
         </div>
-
-        {/* KPIs Principais */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <Card className="bg-gradient-to-br from-blue-950 to-blue-900 border-blue-800">
-            <CardHeader className="pb-3">
-              <CardDescription className="text-blue-300 flex items-center gap-2">
-                <Target className="h-4 w-4" />
-                Total de OS
-              </CardDescription>
-              <CardTitle className="text-3xl text-white">{stats.totalOS}</CardTitle>
-              <div className="flex items-center gap-1 text-sm">
-                <TrendingUp className="h-4 w-4 text-green-400" />
-                <span className="text-green-400">+{stats.variacao}%</span>
-                <span className="text-blue-300">vs período anterior</span>
-              </div>
-            </CardHeader>
-          </Card>
-
-          <Card className="bg-zinc-900 border-zinc-800">
-            <CardHeader className="pb-3">
-              <CardDescription className="text-zinc-400 flex items-center gap-2">
-                <Clock className="h-4 w-4" />
-                Tempo Médio
-              </CardDescription>
-              <CardTitle className="text-3xl text-white">{stats.tempoMedioGeral}h</CardTitle>
-              <div className="flex items-center gap-1 text-sm">
-                <TrendingUp className="h-4 w-4 text-green-400" />
-                <span className="text-green-400">{stats.variacaoTempo}%</span>
-                <span className="text-zinc-400">mais rápido</span>
-              </div>
-            </CardHeader>
-          </Card>
-
-          <Card className="bg-zinc-900 border-zinc-800">
-            <CardHeader className="pb-3">
-              <CardDescription className="text-zinc-400 flex items-center gap-2">
-                <Zap className="h-4 w-4" />
-                Eficiência Média
-              </CardDescription>
-              <CardTitle className="text-3xl text-white">{stats.eficienciaMedia}%</CardTitle>
-              <div className="flex items-center gap-1 text-sm">
-                <TrendingUp className="h-4 w-4 text-green-400" />
-                <span className="text-green-400">+{stats.variacaoEficiencia}%</span>
-                <span className="text-zinc-400">vs período anterior</span>
-              </div>
-            </CardHeader>
-          </Card>
-
-          <Card className="bg-gradient-to-br from-yellow-950 to-yellow-900 border-yellow-800">
-            <CardHeader className="pb-3">
-              <CardDescription className="text-yellow-300 flex items-center gap-2">
-                <Star className="h-4 w-4" />
-                Avaliação Média
-              </CardDescription>
-              <CardTitle className="text-3xl text-white">{stats.avaliacaoMedia}</CardTitle>
-              <div className="flex items-center gap-1">
-                {[1, 2, 3, 4, 5].map((star) => (
-                  <Star
-                    key={star}
-                    className={`h-4 w-4 ${
-                      star <= Math.round(stats.avaliacaoMedia)
-                        ? "fill-yellow-400 text-yellow-400"
-                        : "text-zinc-600"
-                    }`}
-                  />
-                ))}
-              </div>
-            </CardHeader>
-          </Card>
-        </div>
-
-        {/* Gráfico de Produtividade Semanal */}
-        <Card className="bg-zinc-900 border-zinc-800">
-          <CardHeader>
-            <CardTitle className="text-white flex items-center gap-2">
-              <Users className="h-5 w-5" />
-              Produtividade Semanal por Mecânico
-            </CardTitle>
-            <CardDescription className="text-zinc-400">
-              OS concluídas por semana
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={produtividadeSemanal}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#27272a" />
-                <XAxis dataKey="semana" stroke="#a1a1aa" />
-                <YAxis stroke="#a1a1aa" />
-                <Tooltip
-                  contentStyle={{ backgroundColor: "#18181b", border: "1px solid #3f3f46", borderRadius: "8px" }}
-                  labelStyle={{ color: "#ffffff" }}
-                />
-                <Legend />
-                <Bar key="bar-carlos" dataKey="carlos" fill="#ef4444" name="Carlos" radius={[4, 4, 0, 0]} />
-                <Bar key="bar-roberto" dataKey="roberto" fill="#3b82f6" name="Roberto" radius={[4, 4, 0, 0]} />
-                <Bar key="bar-fernando" dataKey="fernando" fill="#22c55e" name="Fernando" radius={[4, 4, 0, 0]} />
-                <Bar key="bar-andre" dataKey="andre" fill="#f59e0b" name="André" radius={[4, 4, 0, 0]} />
+        {ranking.length > 0 && (
+          <Card className="bg-zinc-900 border-zinc-800"><CardHeader><CardTitle className="text-white">OS por Mecânico</CardTitle></CardHeader>
+            <CardContent><ResponsiveContainer width="100%" height={220}>
+              <BarChart data={ranking}><CartesianGrid strokeDasharray="3 3" stroke="#27272a"/>
+                <XAxis dataKey="name" tick={{fill:"#71717a"}}/><YAxis tick={{fill:"#71717a"}}/>
+                <Tooltip contentStyle={{backgroundColor:"#18181b",border:"1px solid #3f3f46",borderRadius:"8px"}}/>
+                <Bar dataKey="concluidas" fill="#22c55e" name="Concluídas" radius={[4,4,0,0]}/>
+                <Bar dataKey="ativas" fill="#8b5cf6" name="Ativas" radius={[4,4,0,0]}/>
               </BarChart>
-            </ResponsiveContainer>
-          </CardContent>
-        </Card>
-
-        {/* Tendência de Tempo Médio */}
-        <Card className="bg-zinc-900 border-zinc-800">
-          <CardHeader>
-            <CardTitle className="text-white flex items-center gap-2">
-              <Clock className="h-5 w-5" />
-              Tendência de Tempo Médio
-            </CardTitle>
-            <CardDescription className="text-zinc-400">
-              Tempo médio de conclusão nos últimos 6 meses
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <ResponsiveContainer width="100%" height={250}>
-              <LineChart data={tempoMedioTendencia}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#27272a" />
-                <XAxis dataKey="mes" stroke="#a1a1aa" />
-                <YAxis stroke="#a1a1aa" />
-                <Tooltip
-                  contentStyle={{ backgroundColor: "#18181b", border: "1px solid #3f3f46", borderRadius: "8px" }}
-                  labelStyle={{ color: "#ffffff" }}
-                  formatter={(value: number) => `${value}h`}
-                />
-                <Line type="monotone" dataKey="tempo" stroke="#22c55e" strokeWidth={3} dot={{ fill: "#22c55e", r: 6 }} />
-              </LineChart>
-            </ResponsiveContainer>
-          </CardContent>
-        </Card>
-
-        {/* Ranking de Mecânicos */}
-        <Card className="bg-zinc-900 border-zinc-800">
-          <CardHeader>
-            <CardTitle className="text-white flex items-center gap-2">
-              <Trophy className="h-5 w-5" />
-              Ranking de Performance
-            </CardTitle>
-            <CardDescription className="text-zinc-400">
-              Mecânicos ordenados por OS concluídas
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {mecanicoOrdenado.map((mecanico, index) => {
-                const nivelInfo = getNivelBadge(mecanico.nivel);
-                return (
-                  <div
-                    key={mecanico.id}
-                    className="flex items-center justify-between p-4 bg-zinc-800/50 rounded-lg hover:bg-zinc-800 transition-colors"
-                  >
-                    <div className="flex items-center gap-4 flex-1">
-                      <div className={`w-12 h-12 rounded-full flex items-center justify-center font-bold text-white text-xl ${
-                        index === 0 ? "bg-gradient-to-br from-yellow-600 to-yellow-500" :
-                        index === 1 ? "bg-gradient-to-br from-zinc-400 to-zinc-500" :
-                        index === 2 ? "bg-gradient-to-br from-orange-600 to-orange-500" :
-                        "bg-gradient-to-br from-zinc-700 to-zinc-600"
-                      }`}>
-                        {index + 1}
-                      </div>
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-1">
-                          <h4 className="font-semibold text-white text-lg">{mecanico.nome}</h4>
-                          <Badge className={nivelInfo.cor}>
-                            Nível {mecanico.nivel} - {nivelInfo.nome}
-                          </Badge>
-                        </div>
-                        <p className="text-zinc-400 text-sm">{mecanico.especialidade}</p>
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-4 gap-6 text-center">
-                      <div>
-                        <div className="text-2xl font-bold text-white">{mecanico.osConcluidas}</div>
-                        <div className="text-xs text-zinc-400">OS Concluídas</div>
-                      </div>
-                      <div>
-                        <div className="text-2xl font-bold text-white">{mecanico.tempoMedio}h</div>
-                        <div className="text-xs text-zinc-400">Tempo Médio</div>
-                      </div>
-                      <div>
-                        <div className={`text-2xl font-bold ${getEficienciaColor(mecanico.eficiencia)}`}>
-                          {mecanico.eficiencia}%
-                        </div>
-                        <div className="text-xs text-zinc-400">Eficiência</div>
-                      </div>
-                      <div>
-                        <div className="flex items-center justify-center gap-1">
-                          <Star className="h-5 w-5 fill-yellow-400 text-yellow-400" />
-                          <span className="text-xl font-bold text-white">{mecanico.avaliacao}</span>
-                        </div>
-                        <div className="text-xs text-zinc-400">Avaliação</div>
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
+            </ResponsiveContainer></CardContent>
+          </Card>
+        )}
+        <div className="space-y-3">
+          {loading ? <p className="text-zinc-500 text-sm">Carregando...</p>
+          : mecanicos.length === 0 ? <p className="text-zinc-500 text-sm text-center py-8">Nenhum mecânico cadastrado em 12_MECANICOS</p>
+          : mecanicos.map((m,i) => (
+            <div key={m.id} className="flex items-center gap-4 p-4 bg-zinc-900 border border-zinc-800 rounded-xl">
+              <div className="w-8 h-8 rounded-full bg-zinc-800 flex items-center justify-center">
+                {i===0?<Trophy className="h-4 w-4 text-yellow-400"/>:<span className="text-zinc-500 text-sm font-bold">{i+1}</span>}
+              </div>
+              <div className="flex-1">
+                <div className="flex items-center gap-2">
+                  <p className="text-white font-medium">{m.nome}</p>
+                  <Badge className={(NIVEL[m.nivel as keyof typeof NIVEL]||"bg-zinc-700")+" text-xs text-zinc-300"}>{m.nivel}</Badge>
+                </div>
+                {m.especialidade && <p className="text-zinc-400 text-xs">{m.especialidade}</p>}
+              </div>
+              <div className="flex gap-6 text-center">
+                <div><p className="text-green-400 font-bold">{m.concluidas}</p><p className="text-zinc-500 text-xs">concluídas</p></div>
+                <div><p className="text-purple-400 font-bold">{m.ativas}</p><p className="text-zinc-500 text-xs">ativas</p></div>
+                <div><p className="text-blue-400 font-bold">{m.total}</p><p className="text-zinc-500 text-xs">total</p></div>
+                <div><p className="text-emerald-400 font-bold text-sm">{fmt(m.faturamento)}</p><p className="text-zinc-500 text-xs">faturado</p></div>
+              </div>
             </div>
-          </CardContent>
-        </Card>
-
-        {/* Insights */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <Card className="bg-green-950 border-green-800">
-            <CardHeader>
-              <CardTitle className="text-white flex items-center gap-2 text-lg">
-                <Award className="h-5 w-5 text-green-400" />
-                Melhor Performance
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-2xl font-bold text-white mb-1">{mecanicoOrdenado[0].nome}</p>
-              <p className="text-green-400">{mecanicoOrdenado[0].osConcluidas} OS concluídas</p>
-              <p className="text-zinc-400 text-sm mt-2">
-                {mecanicoOrdenado[0].eficiencia}% de eficiência
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card className="bg-blue-950 border-blue-800">
-            <CardHeader>
-              <CardTitle className="text-white flex items-center gap-2 text-lg">
-                <Clock className="h-5 w-5 text-blue-400" />
-                Mais Rápido
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-2xl font-bold text-white mb-1">
-                {[...mecanicos].sort((a, b) => a.tempoMedio - b.tempoMedio)[0].nome}
-              </p>
-              <p className="text-blue-400">
-                {[...mecanicos].sort((a, b) => a.tempoMedio - b.tempoMedio)[0].tempoMedio}h por OS
-              </p>
-              <p className="text-zinc-400 text-sm mt-2">Tempo médio de conclusão</p>
-            </CardContent>
-          </Card>
-
-          <Card className="bg-yellow-950 border-yellow-800">
-            <CardHeader>
-              <CardTitle className="text-white flex items-center gap-2 text-lg">
-                <Star className="h-5 w-5 text-yellow-400" />
-                Melhor Avaliado
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-2xl font-bold text-white mb-1">
-                {[...mecanicos].sort((a, b) => b.avaliacao - a.avaliacao)[0].nome}
-              </p>
-              <p className="text-yellow-400 flex items-center gap-1">
-                <Star className="h-5 w-5 fill-yellow-400" />
-                {[...mecanicos].sort((a, b) => b.avaliacao - a.avaliacao)[0].avaliacao}
-              </p>
-              <p className="text-zinc-400 text-sm mt-2">Avaliação média dos clientes</p>
-            </CardContent>
-          </Card>
+          ))}
         </div>
       </div>
     </AdminLayout>
