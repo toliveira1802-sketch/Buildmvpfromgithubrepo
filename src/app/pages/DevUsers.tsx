@@ -13,15 +13,6 @@ import { createClient } from "@supabase/supabase-js";
 const SUPABASE_URL = "https://acuufrgoyjwzlyhopaus.supabase.co";
 const SERVICE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFjdXVmcmdveWp3emx5aG9wYXVzIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2ODI2Mjk4OCwiZXhwIjoyMDgzODM4OTg4fQ.mCMQoBXRwSNrd1VgEa1uHCJwP3mcto5xjlt3LF6VUO4";
 const supabaseAdmin = createClient(SUPABASE_URL, SERVICE_KEY, { auth: { autoRefreshToken: false, persistSession: false } });
-async function createAuthUser(email: string, password: string, meta: object): Promise<string> {
-  const res = await fetch(SUPABASE_URL+"/auth/v1/admin/users", { method: "POST", headers: { "Content-Type": "application/json", "apikey": SERVICE_KEY, "Authorization": "Bearer "+SERVICE_KEY }, body: JSON.stringify({ email, password, email_confirm: true, user_metadata: meta }) });
-  const json = await res.json();
-  if (!res.ok) throw new Error(json.msg || json.message || JSON.stringify(json));
-  return json.id as string;
-}
-async function deleteAuthUser(uid: string) {
-  await fetch(SUPABASE_URL+"/auth/v1/admin/users/"+uid, { method: "DELETE", headers: { "apikey": SERVICE_KEY, "Authorization": "Bearer "+SERVICE_KEY } });
-}
 type Cargo = "Dev" | "Gestao" | "Consultor" | "Mecanico";
 type Nivel = "junior" | "pleno" | "senior" | "master";
 interface Usuario { id: number; nome: string; email: string|null; username: string|null; cargo: string|null; nivelAcessoId: number|null; ativo: boolean; primeiroAcesso: boolean; auth_user_id: string|null; createdAt: string; mecanico?: {especialidade:string|null;nivel:string}|null; }
@@ -53,26 +44,28 @@ export default function DevUsers() {
   const handleCreate = async () => {
     if (!form.nome){toast.error("Nome obrigatorio");return;} setSaving(true);
     try {
-      const {data:senhaHash,error:hashErr} = await supabaseAdmin.rpc("hash_password",{p_password:"123456"}); if (hashErr) throw hashErr;
       const autoUsername = form.username||(form.cargo+"_"+form.nome.split(" ")[0].toLowerCase());
-      const autoEmail = autoUsername.toLowerCase().replace(/\s/g,"")+"@doctorauto.internal";
-      const auth_user_id = await createAuthUser(autoEmail,"123456",{nome:form.nome,cargo:form.cargo});
-      const {data:newUser,error:userErr} = await supabaseAdmin.from("10_users").insert({nome:form.nome,email:autoEmail,username:autoUsername,telefone:form.telefone||null,cpf:form.cpf||null,cargo:form.cargo,nivelAcessoId:NIVEL_ACESSO[form.cargo],auth_user_id,senha:senhaHash,ativo:true,primeiroAcesso:true,empresaId:1}).select("id").single();
-      if (userErr) throw userErr;
-      if (form.cargo==="Mecanico") { const {error:mecErr} = await supabaseAdmin.from("12_MECANICOS").insert({user_id:newUser.id,auth_user_id,nome:form.nome,telefone:form.telefone||null,cpf:form.cpf||null,especialidade:form.especialidade||null,nivel:form.nivel}); if (mecErr) throw mecErr; }
+      const { data, error } = await supabaseAdmin.rpc("criar_usuario_staff", {
+        p_nome: form.nome, p_username: autoUsername, p_cargo: form.cargo,
+        p_nivel_acesso: NIVEL_ACESSO[form.cargo], p_telefone: form.telefone||null,
+        p_cpf: form.cpf||null, p_especialidade: form.especialidade||null,
+        p_nivel_mecanico: form.nivel, p_empresa_id: 1,
+      });
+      if (error) throw error;
+      if (!data.ok) throw new Error(data.error);
       toast.success("Criado: "+autoUsername+" | Senha: 123456");
       setCreateOpen(false);setForm(emptyForm);load();
     } catch(err:any){toast.error("Erro: "+err.message);} finally{setSaving(false);}
   };
   const handleToggle = async (u:Usuario)=>{ const {error} = await supabaseAdmin.from("10_users").update({ativo:!u.ativo}).eq("id",u.id); if (error){toast.error(error.message);return;} toast.success(u.nome+" "+(u.ativo?"desativado":"ativado"));load(); };
-  const handleDelete = async ()=>{ if (!selected) return; setSaving(true); try { const {error} = await supabaseAdmin.from("10_users").delete().eq("id",selected.id); if (error) throw error; if (selected.auth_user_id) await deleteAuthUser(selected.auth_user_id); toast.success(selected.nome+" removido"); setDeleteOpen(false);setSelected(null);load(); } catch(err:any){toast.error("Erro: "+err.message);} finally{setSaving(false);} };
+  const handleDelete = async ()=>{ if (!selected) return; setSaving(true); try { const {error} = await supabaseAdmin.from("10_users").delete().eq("id",selected.id); if (error) throw error; toast.success(selected.nome+" removido"); setDeleteOpen(false);setSelected(null);load(); } catch(err:any){toast.error("Erro: "+err.message);} finally{setSaving(false);} };
   return (
     <DevLayout>
       <div className="container mx-auto p-6 space-y-6 max-w-6xl">
         <div className="flex items-center justify-between">
           <div><h1 className="text-3xl font-bold text-white flex items-center gap-2"><Users className="h-8 w-8 text-red-400"/>Usuarios do Sistema</h1><p className="text-zinc-400 mt-1">Somente DEV cadastra</p></div>
           <div className="flex gap-2">
-            <Button onClick={load} disabled={loading} variant="outline" className="border-zinc-700 text-zinc-300"><RefreshCw className={"h-4 w-4 mr-2"+(loading?" animate-spin":"")}/>    Atualizar</Button>
+            <Button onClick={load} disabled={loading} variant="outline" className="border-zinc-700 text-zinc-300"><RefreshCw className={"h-4 w-4 mr-2"+(loading?" animate-spin":"")}/>Atualizar</Button>
             <Button onClick={()=>{setForm(emptyForm);setCreateOpen(true);}} className="bg-red-600 hover:bg-red-700"><Plus className="h-4 w-4 mr-2"/>Novo Usuario</Button>
           </div>
         </div>
@@ -103,7 +96,7 @@ export default function DevUsers() {
       </div>
       <Dialog open={createOpen} onOpenChange={setCreateOpen}>
         <DialogContent className="max-w-md bg-zinc-900 border-zinc-800 text-white">
-          <DialogHeader><DialogTitle className="flex items-center gap-2"><Plus className="h-5 w-5 text-red-400"/>Novo Usuario</DialogTitle><DialogDescription className="text-zinc-400">Cria em auth.users + 10_users{form.cargo==="Mecanico"&&" + 12_MECANICOS"}. Email gerado automaticamente.</DialogDescription></DialogHeader>
+          <DialogHeader><DialogTitle className="flex items-center gap-2"><Plus className="h-5 w-5 text-red-400"/>Novo Usuario</DialogTitle><DialogDescription className="text-zinc-400">Cria via RPC criar_usuario_staff — auth.users + 10_users{form.cargo==="Mecanico"&&" + 12_MECANICOS"}.</DialogDescription></DialogHeader>
           <div className="space-y-3">
             <div className="grid grid-cols-2 gap-3">
               <div className="col-span-2"><Label className="text-zinc-300 text-xs">Nome Completo *</Label><Input value={form.nome} onChange={e=>setForm(p=>({...p,nome:e.target.value}))} placeholder="Nome completo" className="bg-zinc-800 border-zinc-700 text-white mt-1"/></div>
@@ -113,7 +106,7 @@ export default function DevUsers() {
               <div><Label className="text-zinc-300 text-xs">Cargo *</Label><select value={form.cargo} onChange={e=>setForm(p=>({...p,cargo:e.target.value as Cargo}))} className="mt-1 w-full bg-zinc-800 border border-zinc-700 text-white rounded-md px-3 py-2 text-sm">{(["Dev","Gestao","Consultor","Mecanico"] as Cargo[]).map(c=><option key={c} value={c}>{c}</option>)}</select></div>
             </div>
             {form.cargo==="Mecanico"&&(<div className="p-3 bg-orange-950/30 border border-orange-800/50 rounded-lg space-y-3"><p className="text-orange-300 text-xs font-medium flex items-center gap-1"><Wrench className="h-3 w-3"/>12_MECANICOS</p><div className="grid grid-cols-2 gap-3"><div><Label className="text-zinc-300 text-xs">Especialidade</Label><Input value={form.especialidade} onChange={e=>setForm(p=>({...p,especialidade:e.target.value}))} placeholder="Eletrica..." className="bg-zinc-800 border-zinc-700 text-white mt-1"/></div><div><Label className="text-zinc-300 text-xs">Nivel</Label><select value={form.nivel} onChange={e=>setForm(p=>({...p,nivel:e.target.value as Nivel}))} className="mt-1 w-full bg-zinc-800 border border-zinc-700 text-white rounded-md px-3 py-2 text-sm">{(["junior","pleno","senior","master"] as Nivel[]).map(n=><option key={n} value={n}>{n}</option>)}</select></div></div></div>)}
-            <div className="p-3 bg-zinc-800/50 border border-zinc-700/40 rounded-lg"><p className="text-zinc-400 text-xs">Login: Username + senha 123456 — email gerado internamente pelo sistema</p></div>
+            <div className="p-3 bg-zinc-800/50 border border-zinc-700/40 rounded-lg"><p className="text-zinc-400 text-xs">Login: Username + senha 123456 — tudo criado dentro do banco via RPC</p></div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={()=>{setCreateOpen(false);setForm(emptyForm);}} className="border-zinc-700 text-zinc-300 hover:bg-zinc-800">Cancelar</Button>
@@ -123,7 +116,7 @@ export default function DevUsers() {
       </Dialog>
       <AlertDialog open={deleteOpen} onOpenChange={setDeleteOpen}>
         <AlertDialogContent className="bg-zinc-900 border-zinc-800">
-          <AlertDialogHeader><AlertDialogTitle className="text-white">Remover?</AlertDialogTitle><AlertDialogDescription className="text-zinc-400">Remove {selected?.nome} de 10_users e auth.users.</AlertDialogDescription></AlertDialogHeader>
+          <AlertDialogHeader><AlertDialogTitle className="text-white">Remover?</AlertDialogTitle><AlertDialogDescription className="text-zinc-400">Remove {selected?.nome} de 10_users.</AlertDialogDescription></AlertDialogHeader>
           <AlertDialogFooter><AlertDialogCancel className="border-zinc-700 text-zinc-300 hover:bg-zinc-800">Cancelar</AlertDialogCancel><AlertDialogAction onClick={handleDelete} disabled={saving} className="bg-red-600 text-white hover:bg-red-700">{saving?"Removendo...":"Confirmar"}</AlertDialogAction></AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
