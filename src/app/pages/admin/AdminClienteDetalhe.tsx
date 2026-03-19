@@ -1,314 +1,108 @@
+﻿import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router";
-import {
-  ArrowLeft,
-  User,
-  Phone,
-  Mail,
-  MapPin,
-  Car,
-  FileText,
-  Calendar,
-  DollarSign,
-  Edit2,
-  Plus,
-} from "lucide-react";
+import { ArrowLeft, User, Phone, Mail, Car, FileText, Loader2, MapPin, CreditCard } from "lucide-react";
 import { Button } from "../../components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../../components/ui/card";
 import { Badge } from "../../components/ui/badge";
+import { Card, CardHeader, CardTitle, CardContent } from "../../components/ui/card";
 import AdminLayout from "../../components/AdminLayout";
-
+import { createClient } from "@supabase/supabase-js";
+const sb = createClient("https://acuufrgoyjwzlyhopaus.supabase.co","eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFjdXVmcmdveWp3emx5aG9wYXVzIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2ODI2Mjk4OCwiZXhwIjoyMDgzODM4OTg4fQ.mCMQoBXRwSNrd1VgEa1uHCJwP3mcto5xjlt3LF6VUO4");
 export default function AdminClienteDetalhe() {
   const { id } = useParams();
   const navigate = useNavigate();
-
-  // Mock data - em produção, viria do backend
-  const cliente = {
-    id: id || "CLI-001",
-    nome: "Carlos Silva",
-    cpf: "123.456.789-00",
-    telefone: "(11) 98765-4321",
-    email: "carlos@email.com",
-    endereco: "Rua das Flores, 123",
-    cidade: "São Paulo - SP",
-    dataCadastro: "2025-01-15",
-    ultimaVisita: "2026-03-10",
+  const [cliente, setCliente] = useState<any>(null);
+  const [veiculos, setVeiculos] = useState<any[]>([]);
+  const [os, setOs] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  useEffect(() => { if (id) load(); }, [id]);
+  async function load() {
+    setLoading(true);
+    const [cli, veics, ordens] = await Promise.all([
+      sb.from("04_CLIENTS").select("*").eq("id",id).single(),
+      sb.from("05_VEHICLES").select("*").eq("client_id",id).order("created_at",{ascending:false}),
+      sb.from("06_OS").select("id,numero_os,status,valor_total,created_at,mecanico_nome,veiculo_modelo").eq("client_id",id).order("created_at",{ascending:false}).limit(10),
+    ]);
+    setCliente(cli.data);
+    setVeiculos(veics.data||[]);
+    setOs(ordens.data||[]);
+    setLoading(false);
+  }
+  const fmt = (v:number) => (v||0).toLocaleString("pt-BR",{style:"currency",currency:"BRL"});
+  const fmtDate = (d:string) => d ? new Date(d).toLocaleDateString("pt-BR") : "—";
+  const STATUS_BADGE: Record<string,string> = {
+    diagnostico:"bg-zinc-700 text-zinc-300", orcamento:"bg-yellow-900/50 text-yellow-300",
+    aprovado:"bg-blue-900/50 text-blue-300", em_execucao:"bg-purple-900/50 text-purple-300",
+    concluido:"bg-green-900/50 text-green-300", entregue:"bg-teal-900/50 text-teal-300",
+    cancelado:"bg-red-900/50 text-red-300",
   };
-
-  const veiculos = [
-    {
-      id: "VEI-001",
-      marca: "Honda",
-      modelo: "Civic",
-      ano: 2020,
-      placa: "ABC-1234",
-      cor: "Preto",
-      km: 45000,
-    },
-    {
-      id: "VEI-002",
-      marca: "Toyota",
-      modelo: "Corolla",
-      ano: 2021,
-      placa: "XYZ-5678",
-      cor: "Prata",
-      km: 32000,
-    },
-  ];
-
-  const historicoServicos = [
-    {
-      id: "OS-123",
-      data: "2026-03-10",
-      veiculo: "Honda Civic - ABC-1234",
-      servico: "Revisão Completa",
-      valor: 850.0,
-      status: "Concluído",
-    },
-    {
-      id: "OS-098",
-      data: "2026-02-15",
-      veiculo: "Toyota Corolla - XYZ-5678",
-      servico: "Troca de Óleo",
-      valor: 320.0,
-      status: "Concluído",
-    },
-    {
-      id: "OS-076",
-      data: "2026-01-20",
-      veiculo: "Honda Civic - ABC-1234",
-      servico: "Alinhamento e Balanceamento",
-      valor: 180.0,
-      status: "Concluído",
-    },
-    {
-      id: "OS-054",
-      data: "2025-12-10",
-      veiculo: "Honda Civic - ABC-1234",
-      servico: "Troca de Pastilhas de Freio",
-      valor: 520.0,
-      status: "Concluído",
-    },
-  ];
-
-  const totalGasto = historicoServicos.reduce((sum, h) => sum + h.valor, 0);
-
+  if (loading) return (<AdminLayout><div className="flex justify-center py-32"><Loader2 className="h-8 w-8 animate-spin text-blue-400"/></div></AdminLayout>);
+  if (!cliente) return (<AdminLayout><div className="p-6 text-zinc-400">Cliente nao encontrado. <Button onClick={() => navigate(-1)} variant="ghost">Voltar</Button></div></AdminLayout>);
+  const totalGasto = os.filter(o => ["concluido","entregue"].includes(o.status)).reduce((s,o) => s+(o.valor_total||0),0);
   return (
     <AdminLayout>
-      <div className="container mx-auto p-6 space-y-6">
-        {/* Header */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <Button
-              variant="ghost"
-              onClick={() => navigate("/clientes")}
-              className="text-zinc-400 hover:text-white"
-            >
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              Voltar
-            </Button>
-            <div>
-              <h1 className="text-3xl font-bold text-white">{cliente.nome}</h1>
-              <p className="text-zinc-400 mt-1">ID: {cliente.id}</p>
-            </div>
-          </div>
-          <Button className="bg-blue-600 hover:bg-blue-700">
-            <Edit2 className="h-4 w-4 mr-2" />
-            Editar Cliente
-          </Button>
+      <div className="p-6 space-y-6 max-w-5xl mx-auto">
+        <div className="flex items-center gap-4">
+          <Button onClick={() => navigate(-1)} variant="ghost" className="text-zinc-400 hover:text-white"><ArrowLeft className="h-4 w-4 mr-1"/>Voltar</Button>
+          <h1 className="text-2xl font-bold text-white flex items-center gap-2"><User className="h-6 w-6 text-blue-400"/>{cliente.full_name||"—"}</h1>
         </div>
-
-        {/* Informações do Cliente */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Dados Pessoais */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <Card className="bg-zinc-900 border-zinc-800 md:col-span-2">
+            <CardHeader><CardTitle className="text-white text-sm text-zinc-400">Dados do Cliente</CardTitle></CardHeader>
+            <CardContent className="grid grid-cols-2 gap-3 text-sm">
+              <div><p className="text-zinc-500 text-xs">Nome</p><p className="text-white">{cliente.full_name||"—"}</p></div>
+              <div><p className="text-zinc-500 text-xs">CPF</p><p className="text-zinc-300 font-mono">{cliente.cpf||"—"}</p></div>
+              <div><p className="text-zinc-500 text-xs flex items-center gap-1"><Phone className="h-3 w-3"/>Telefone</p><p className="text-zinc-300">{cliente.phone||"—"}</p></div>
+              <div><p className="text-zinc-500 text-xs flex items-center gap-1"><Mail className="h-3 w-3"/>Email</p><p className="text-zinc-300">{cliente.email||"—"}</p></div>
+              <div><p className="text-zinc-500 text-xs flex items-center gap-1"><MapPin className="h-3 w-3"/>Cidade</p><p className="text-zinc-300">{cliente.cidade||"—"} {cliente.estado && "/ "+cliente.estado}</p></div>
+              <div><p className="text-zinc-500 text-xs">Cadastro</p><p className="text-zinc-300">{fmtDate(cliente.created_at)}</p></div>
+            </CardContent>
+          </Card>
           <Card className="bg-zinc-900 border-zinc-800">
-            <CardHeader>
-              <CardTitle className="text-white flex items-center gap-2">
-                <User className="h-5 w-5" />
-                Dados Pessoais
-              </CardTitle>
-            </CardHeader>
+            <CardHeader><CardTitle className="text-white text-sm">Resumo</CardTitle></CardHeader>
             <CardContent className="space-y-3">
-              <div>
-                <p className="text-sm text-zinc-500">CPF</p>
-                <p className="text-white">{cliente.cpf}</p>
+              <div className="text-center p-3 bg-green-950/30 rounded-lg border border-green-900/40">
+                <p className="text-xs text-zinc-400">Total Gasto</p>
+                <p className="text-green-400 font-bold text-xl">{fmt(totalGasto)}</p>
               </div>
-              <div className="flex items-center gap-2">
-                <Phone className="h-4 w-4 text-zinc-500" />
-                <p className="text-white">{cliente.telefone}</p>
-              </div>
-              <div className="flex items-center gap-2">
-                <Mail className="h-4 w-4 text-zinc-500" />
-                <p className="text-white">{cliente.email}</p>
-              </div>
-              <div className="flex items-start gap-2">
-                <MapPin className="h-4 w-4 text-zinc-500 mt-1" />
-                <div>
-                  <p className="text-white">{cliente.endereco}</p>
-                  <p className="text-zinc-400">{cliente.cidade}</p>
+              <div className="flex justify-between text-sm"><span className="text-zinc-400">OS totais</span><span className="text-white">{os.length}</span></div>
+              <div className="flex justify-between text-sm"><span className="text-zinc-400">Veículos</span><span className="text-white">{veiculos.length}</span></div>
+            </CardContent>
+          </Card>
+        </div>
+        {veiculos.length > 0 && (
+          <Card className="bg-zinc-900 border-zinc-800">
+            <CardHeader><CardTitle className="text-white flex items-center gap-2"><Car className="h-4 w-4 text-blue-400"/>Veículos ({veiculos.length})</CardTitle></CardHeader>
+            <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              {veiculos.map(v => (
+                <div key={v.id} className="p-3 rounded-lg border border-zinc-700 bg-zinc-800/50">
+                  <p className="text-white font-medium">{v.modelo||"—"} {v.marca && "· "+v.marca}</p>
+                  <p className="text-zinc-400 text-sm font-mono">{v.placa}</p>
+                  <p className="text-zinc-500 text-xs">{v.ano||""} {v.ultima_km && "· KM: "+v.ultima_km}</p>
                 </div>
-              </div>
+              ))}
             </CardContent>
           </Card>
-
-          {/* Estatísticas */}
-          <Card className="bg-zinc-900 border-zinc-800">
-            <CardHeader>
-              <CardTitle className="text-white flex items-center gap-2">
-                <FileText className="h-5 w-5" />
-                Estatísticas
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div>
-                <p className="text-sm text-zinc-500">Total Gasto</p>
-                <p className="text-2xl font-bold text-green-500">
-                  {totalGasto.toLocaleString("pt-BR", {
-                    style: "currency",
-                    currency: "BRL",
-                  })}
-                </p>
-              </div>
-              <div>
-                <p className="text-sm text-zinc-500">Veículos Cadastrados</p>
-                <p className="text-2xl font-bold text-white">{veiculos.length}</p>
-              </div>
-              <div>
-                <p className="text-sm text-zinc-500">Serviços Realizados</p>
-                <p className="text-2xl font-bold text-white">{historicoServicos.length}</p>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Datas Importantes */}
-          <Card className="bg-zinc-900 border-zinc-800">
-            <CardHeader>
-              <CardTitle className="text-white flex items-center gap-2">
-                <Calendar className="h-5 w-5" />
-                Datas Importantes
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <div>
-                <p className="text-sm text-zinc-500">Data de Cadastro</p>
-                <p className="text-white">
-                  {new Date(cliente.dataCadastro).toLocaleDateString("pt-BR")}
-                </p>
-              </div>
-              <div>
-                <p className="text-sm text-zinc-500">Última Visita</p>
-                <p className="text-white">
-                  {new Date(cliente.ultimaVisita).toLocaleDateString("pt-BR")}
-                </p>
-              </div>
-              <div>
-                <p className="text-sm text-zinc-500">Tempo de Cliente</p>
-                <p className="text-white">
-                  {Math.floor(
-                    (new Date().getTime() - new Date(cliente.dataCadastro).getTime()) /
-                      (1000 * 60 * 60 * 24 * 30)
-                  )}{" "}
-                  meses
-                </p>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Veículos */}
-        <div>
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-2xl font-bold text-white flex items-center gap-2">
-              <Car className="h-6 w-6" />
-              Veículos
-            </h2>
-            <Button className="bg-red-600 hover:bg-red-700">
-              <Plus className="h-4 w-4 mr-2" />
-              Adicionar Veículo
-            </Button>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {veiculos.map((veiculo) => (
-              <Card key={veiculo.id} className="bg-zinc-900 border-zinc-800">
-                <CardHeader>
-                  <div className="flex items-start justify-between">
-                    <div>
-                      <CardTitle className="text-white">
-                        {veiculo.marca} {veiculo.modelo}
-                      </CardTitle>
-                      <CardDescription className="text-zinc-400 mt-1">
-                        {veiculo.ano} • {veiculo.cor}
-                      </CardDescription>
-                    </div>
-                    <Badge className="bg-blue-600">{veiculo.placa}</Badge>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-2">
-                    <div className="flex justify-between text-sm">
-                      <span className="text-zinc-400">Quilometragem</span>
-                      <span className="text-white">{veiculo.km.toLocaleString()} km</span>
-                    </div>
-                    <div className="flex justify-between text-sm">
-                      <span className="text-zinc-400">ID do Veículo</span>
-                      <span className="text-white">{veiculo.id}</span>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </div>
-
-        {/* Histórico de Serviços */}
-        <div>
-          <h2 className="text-2xl font-bold text-white mb-4 flex items-center gap-2">
-            <FileText className="h-6 w-6" />
-            Histórico de Serviços
-          </h2>
-
-          <Card className="bg-zinc-900 border-zinc-800">
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead className="border-b border-zinc-800">
-                  <tr className="text-left">
-                    <th className="p-4 font-medium text-zinc-300">OS</th>
-                    <th className="p-4 font-medium text-zinc-300">Data</th>
-                    <th className="p-4 font-medium text-zinc-300">Veículo</th>
-                    <th className="p-4 font-medium text-zinc-300">Serviço</th>
-                    <th className="p-4 font-medium text-zinc-300">Valor</th>
-                    <th className="p-4 font-medium text-zinc-300">Status</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {historicoServicos.map((servico) => (
-                    <tr
-                      key={servico.id}
-                      className="border-b border-zinc-800 hover:bg-zinc-800/50 cursor-pointer"
-                      onClick={() => navigate(`/ordens-servico/${servico.id}`)}
-                    >
-                      <td className="p-4 font-medium text-blue-500">{servico.id}</td>
-                      <td className="p-4 text-zinc-300">
-                        {new Date(servico.data).toLocaleDateString("pt-BR")}
-                      </td>
-                      <td className="p-4 text-zinc-300">{servico.veiculo}</td>
-                      <td className="p-4 text-white">{servico.servico}</td>
-                      <td className="p-4 text-green-500 font-semibold">
-                        {servico.valor.toLocaleString("pt-BR", {
-                          style: "currency",
-                          currency: "BRL",
-                        })}
-                      </td>
-                      <td className="p-4">
-                        <Badge className="bg-green-500">{servico.status}</Badge>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </Card>
-        </div>
+        )}
+        <Card className="bg-zinc-900 border-zinc-800">
+          <CardHeader><CardTitle className="text-white flex items-center gap-2"><FileText className="h-4 w-4 text-purple-400"/>Ordens de Serviço ({os.length})</CardTitle></CardHeader>
+          <CardContent>
+            {os.length === 0 ? <p className="text-zinc-500 text-sm">Nenhuma OS ainda</p>
+            : <table className="w-full text-sm"><thead><tr className="text-zinc-400 text-xs border-b border-zinc-800">
+                <th className="pb-2 text-left">OS</th><th className="pb-2 text-left">Status</th><th className="pb-2 text-left">Veículo</th><th className="pb-2 text-right">Valor</th><th className="pb-2 text-right">Data</th>
+              </tr></thead><tbody>
+              {os.map(o => (
+                <tr key={o.id} onClick={() => navigate("/ordens-servico/"+o.id)}
+                  className="border-b border-zinc-800/50 hover:bg-zinc-800/30 cursor-pointer">
+                  <td className="py-2 font-mono text-blue-400 text-xs">{o.numero_os}</td>
+                  <td className="py-2"><Badge className={(STATUS_BADGE[o.status]||"bg-zinc-700 text-zinc-300")+" text-xs"}>{o.status?.replace(/_/g," ")}</Badge></td>
+                  <td className="py-2 text-zinc-400">{o.veiculo_modelo||"—"}</td>
+                  <td className="py-2 text-right text-green-400">{fmt(o.valor_total)}</td>
+                  <td className="py-2 text-right text-zinc-500 text-xs">{fmtDate(o.created_at)}</td>
+                </tr>
+              ))}
+            </tbody></table>}
+          </CardContent>
+        </Card>
       </div>
     </AdminLayout>
   );
