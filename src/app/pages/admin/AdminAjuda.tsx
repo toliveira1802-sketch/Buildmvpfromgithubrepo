@@ -1,95 +1,42 @@
-import { HelpCircle, Book, MessageCircle, Video, FileText } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/card";
-import { Button } from "../../components/ui/button";
+﻿import { HelpCircle, ChevronDown, ChevronUp } from "lucide-react";
+import { useState } from "react";
+import { Card } from "../../components/ui/card";
 import AdminLayout from "../../components/AdminLayout";
-
+const FAQ = [
+  { q:"Como abrir uma nova OS?", r:"Vá em Ordens de Serviço > Nova OS ou clique em Nova OS no Dashboard." },
+  { q:"Como avancar o status de uma OS?", r:"Abra a OS e clique em Avancar Status no final da pagina de detalhes." },
+  { q:"Como cadastrar um cliente?", r:"Clientes sao criados automaticamente ao abrir uma Nova OS. Preencha os dados na tela de criacao." },
+  { q:"Como adicionar um mecanico?", r:"Apenas o DEV pode criar mecanicos em /dev-users. Entre em contato com o administrador do sistema." },
+  { q:"Como ver o historico de uma OS?", r:"Abra a OS em Ordens de Servico e veja a secao Historico no final da pagina." },
+  { q:"O que significa cada status da OS?", r:"diagnostico > orcamento > aguardando aprovacao > aprovado > em execucao > concluido > entregue. Cancelado pode acontecer em qualquer etapa." },
+  { q:"Como ver os veiculos no patio?", r:"Acesse Patio no menu lateral para ver o Kanban com todos os veiculos ativos." },
+  { q:"Como gerar relatorios?", r:"Acesse Relatorios no menu lateral para ver metricas e exportar dados." },
+];
 export default function AdminAjuda() {
+  const [open, setOpen] = useState<number|null>(null);
   return (
     <AdminLayout>
-      <div className="container mx-auto p-6 space-y-6">
-        <div>
-          <h1 className="text-3xl font-bold text-white">Central de Ajuda</h1>
-          <p className="text-zinc-400 mt-1">Recursos e suporte para usar o sistema</p>
+      <div className="p-6 max-w-3xl mx-auto space-y-6">
+        <div><h1 className="text-3xl font-bold text-white flex items-center gap-2"><HelpCircle className="h-8 w-8 text-blue-400"/>Ajuda</h1>
+          <p className="text-zinc-400 mt-1">Perguntas frequentes do sistema</p></div>
+        <div className="space-y-2">
+          {FAQ.map((item, i) => (
+            <Card key={i} className="bg-zinc-900 border-zinc-800 overflow-hidden">
+              <button onClick={() => setOpen(open===i ? null : i)}
+                className="w-full flex items-center justify-between px-5 py-4 text-left hover:bg-zinc-800/50 transition-colors">
+                <span className="text-white font-medium">{item.q}</span>
+                {open===i ? <ChevronUp className="h-4 w-4 text-zinc-400 flex-shrink-0"/> : <ChevronDown className="h-4 w-4 text-zinc-400 flex-shrink-0"/>}
+              </button>
+              {open===i && (
+                <div className="px-5 pb-4 border-t border-zinc-800">
+                  <p className="text-zinc-300 pt-3 text-sm leading-relaxed">{item.r}</p>
+                </div>
+              )}
+            </Card>
+          ))}
         </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <Card className="bg-zinc-900 border-zinc-800 cursor-pointer hover:bg-zinc-800 transition-colors">
-            <CardContent className="pt-6">
-              <Book className="h-12 w-12 text-blue-500 mb-4" />
-              <h3 className="text-lg font-semibold text-white mb-2">Documentação</h3>
-              <p className="text-sm text-zinc-400">Guias completos e tutoriais</p>
-            </CardContent>
-          </Card>
-
-          <Card className="bg-zinc-900 border-zinc-800 cursor-pointer hover:bg-zinc-800 transition-colors">
-            <CardContent className="pt-6">
-              <Video className="h-12 w-12 text-purple-500 mb-4" />
-              <h3 className="text-lg font-semibold text-white mb-2">Vídeo Aulas</h3>
-              <p className="text-sm text-zinc-400">Aprenda assistindo</p>
-            </CardContent>
-          </Card>
-
-          <Card className="bg-zinc-900 border-zinc-800 cursor-pointer hover:bg-zinc-800 transition-colors">
-            <CardContent className="pt-6">
-              <MessageCircle className="h-12 w-12 text-green-500 mb-4" />
-              <h3 className="text-lg font-semibold text-white mb-2">Chat de Suporte</h3>
-              <p className="text-sm text-zinc-400">Fale com nossa equipe</p>
-            </CardContent>
-          </Card>
-
-          <Card className="bg-zinc-900 border-zinc-800 cursor-pointer hover:bg-zinc-800 transition-colors">
-            <CardContent className="pt-6">
-              <FileText className="h-12 w-12 text-yellow-500 mb-4" />
-              <h3 className="text-lg font-semibold text-white mb-2">FAQ</h3>
-              <p className="text-sm text-zinc-400">Perguntas frequentes</p>
-            </CardContent>
-          </Card>
-        </div>
-
-        <Card className="bg-zinc-900 border-zinc-800">
-          <CardHeader>
-            <CardTitle className="text-white">Perguntas Frequentes</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="p-4 bg-zinc-800 rounded-lg">
-              <h4 className="text-white font-semibold mb-2">Como criar uma nova ordem de serviço?</h4>
-              <p className="text-zinc-400 text-sm">
-                Acesse "Ordens de Serviço" no menu lateral e clique em "Nova OS". Preencha os dados do cliente e veículo.
-              </p>
-            </div>
-
-            <div className="p-4 bg-zinc-800 rounded-lg">
-              <h4 className="text-white font-semibold mb-2">Como cadastrar um novo cliente?</h4>
-              <p className="text-zinc-400 text-sm">
-                Vá em "Clientes" e clique em "Novo Cliente". Preencha as informações obrigatórias.
-              </p>
-            </div>
-
-            <div className="p-4 bg-zinc-800 rounded-lg">
-              <h4 className="text-white font-semibold mb-2">Como funciona o sistema de gamificação?</h4>
-              <p className="text-zinc-400 text-sm">
-                Mecânicos ganham pontos ao concluir OS. Quanto melhor o desempenho, mais pontos e badges são conquistados.
-              </p>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-gradient-to-br from-blue-950 to-zinc-900 border-blue-800">
-          <CardContent className="py-8 text-center">
-            <HelpCircle className="h-16 w-16 text-blue-400 mx-auto mb-4" />
-            <h3 className="text-2xl font-bold text-white mb-2">Precisa de mais ajuda?</h3>
-            <p className="text-zinc-300 mb-6">Nossa equipe está pronta para ajudar</p>
-            <div className="flex gap-4 justify-center">
-              <Button className="bg-blue-600 hover:bg-blue-700">
-                <MessageCircle className="h-4 w-4 mr-2" />
-                Abrir Chat
-              </Button>
-              <Button variant="outline" className="border-blue-600 text-blue-400 hover:bg-blue-950">
-                <FileText className="h-4 w-4 mr-2" />
-                Ver Documentação
-              </Button>
-            </div>
-          </CardContent>
+        <Card className="bg-blue-950/30 border-blue-800 p-4">
+          <p className="text-blue-300 text-sm">Precisa de mais ajuda? Contate o DEV em <code className="text-blue-400">Dev_thales</code></p>
         </Card>
       </div>
     </AdminLayout>
