@@ -699,6 +699,106 @@ app.post("/make-server-0092e077/ordens-servico", authMiddleware, async (c) => {
   }
 });
 
+// ==================== SQL AGENT ====================
+
+// Listar operações SQL salvas
+app.get("/make-server-0092e077/dev/sql-operations", authMiddleware, async (c) => {
+  try {
+    const ops = await kv.getByPrefix("sql-op:");
+    const sorted = ops
+      .map((item: any) => item.value)
+      .filter(Boolean)
+      .sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    return c.json(sorted);
+  } catch (error: any) {
+    return c.json({ error: "Failed to fetch operations" }, 500);
+  }
+});
+
+// Criar nova operação SQL
+app.post("/make-server-0092e077/dev/sql-operations", authMiddleware, async (c) => {
+  try {
+    const { title, description, sql, type } = await c.req.json();
+    if (!title || !sql || !type) {
+      return c.json({ error: "title, sql e type são obrigatórios" }, 400);
+    }
+    const allowedTypes = ["CREATE", "ALTER", "DROP", "INSERT", "UPDATE", "DELETE"];
+    if (!allowedTypes.includes(type.toUpperCase())) {
+      return c.json({ error: `Tipo inválido. Use: ${allowedTypes.join(", ")}` }, 400);
+    }
+    const id = `sqlop_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+    const user = c.get("user");
+    const op = {
+      id, title, description: description || "", sql,
+      type: type.toUpperCase(), status: "pendente",
+      createdBy: user?.username || "anonymous",
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      result: null, error: null,
+    };
+    await kv.set(`sql-op:${id}`, op);
+    return c.json(op, 201);
+  } catch (error: any) {
+    return c.json({ error: "Failed to create operation" }, 500);
+  }
+});
+
+// Executar operação SQL no banco real
+app.post("/make-server-0092e077/dev/sql-operations/:id/execute", authMiddleware, async (c) => {
+  try {
+    const id = c.req.param("id");
+    const op: any = await kv.get(`sql-op:${id}`);
+    if (!op) return c.json({ error: "Operação não encontrada" }, 404);
+    if (op.status === "aprovado") return c.json({ error: "Operação já foi executada" }, 400);
+
+    op.status = "enviado";
+    op.updatedAt = new Date().toISOString();
+    await kv.set(`sql-op:${id}`, op);
+
+    // Bloquear comandos destrutivos sem WHERE
+    const dangerous = /\b(DROP\s+DATABASE|TRUNCATE\s+TABLE)\b/i;
+    if (dangerous.test(op.sql)) {
+      op.status = "rejeitado";
+      op.error = "Comando bloqueado por segurança";
+      op.updatedAt = new Date().toISOString();
+      await kv.set(`sql-op:${id}`, op);
+      return c.json({ error: op.error, operation: op }, 403);
+    }
+
+    const { data, error } = await supabase.rpc("exec_sql", { sql_query: op.sql });
+
+    if (error) {
+      op.status = "rejeitado";
+      op.error = error.message;
+      op.updatedAt = new Date().toISOString();
+      await kv.set(`sql-op:${id}`, op);
+      return c.json({ error: error.message, operation: op }, 400);
+    }
+
+    op.status = "aprovado";
+    op.result = data || "Executado com sucesso";
+    op.error = null;
+    op.updatedAt = new Date().toISOString();
+    await kv.set(`sql-op:${id}`, op);
+    return c.json({ message: "SQL executado com sucesso!", operation: op });
+  } catch (error: any) {
+    return c.json({ error: "Erro ao executar SQL: " + error.message }, 500);
+  }
+});
+
+// Deletar operação SQL
+app.delete("/make-server-0092e077/dev/sql-operations/:id", authMiddleware, async (c) => {
+  try {
+    const id = c.req.param("id");
+    const op = await kv.get(`sql-op:${id}`);
+    if (!op) return c.json({ error: "Operação não encontrada" }, 404);
+    await kv.del(`sql-op:${id}`);
+    return c.json({ message: "Operação deletada" });
+  } catch (error: any) {
+    return c.json({ error: "Failed to delete operation" }, 500);
+  }
+});
+
 // ==================== START SERVER ====================
 
 Deno.serve(app.fetch);
