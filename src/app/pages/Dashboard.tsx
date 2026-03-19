@@ -2,7 +2,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../co
 import { useEffect } from "react";
 import { TrendingUp, Clock, CheckCircle2, AlertCircle, DollarSign, Car, FileText } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
-import AdminLayout from "../components/AdminLayout";
+import ConsultorLayout from "../components/ConsultorLayout";
 
 export default function Dashboard() {
   useEffect(() => {
@@ -51,7 +51,7 @@ export default function Dashboard() {
   const alertas: Array<{ tipo: string; mensagem: string; icon: any }> = [];
 
   return (
-    <AdminLayout>
+    <ConsultorLayout>
       <div className="p-4 md:p-6 space-y-6">
         <div>
           <h1 className="text-3xl font-bold">Dashboard</h1>
@@ -188,6 +188,6 @@ export default function Dashboard() {
           </Card>
         </div>
       </div>
-    </AdminLayout>
+    </ConsultorLayout>
   );
 }

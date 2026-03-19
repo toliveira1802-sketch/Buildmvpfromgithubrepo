@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import { Button } from "./ui/button";
 import { cn } from "./ui/utils";
+import Logo from "./Logo";
 
 interface AdminLayoutProps {
   children: ReactNode;
@@ -54,11 +55,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
       )}>
         <div className="p-6 border-b border-zinc-800">
           <div className="flex items-center gap-3">
-            <img 
-              src="figma:asset/c84924fffe8eefdfa83c8a6fa6d7ef2e7b310b86.png" 
-              alt="Doctor Auto Logo" 
-              className="w-10 h-10"
-            />
+            <Logo size={40} />
             <div>
               <h1 className="text-xl font-semibold text-white">
                 DOCTOR AUTO
@@ -113,11 +110,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
         {/* Mobile Header */}
         <header className="md:hidden bg-zinc-900 border-b border-zinc-800 p-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <img 
-              src="figma:asset/c84924fffe8eefdfa83c8a6fa6d7ef2e7b310b86.png" 
-              alt="Doctor Auto Logo" 
-              className="w-8 h-8"
-            />
+              <Logo size={32} />
             <div>
               <h1 className="text-lg font-semibold text-white">DOCTOR AUTO</h1>
               <p className="text-xs text-zinc-500">{user.cargo}</p>
@@ -140,11 +133,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
           <aside className="absolute left-0 top-0 bottom-0 w-64 bg-zinc-900 border-r border-zinc-800 flex flex-col" onClick={(e) => e.stopPropagation()}>
             <div className="p-6 border-b border-zinc-800 flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <img 
-                  src="figma:asset/c84924fffe8eefdfa83c8a6fa6d7ef2e7b310b86.png" 
-                  alt="Doctor Auto Logo" 
-                  className="w-8 h-8"
-                />
+                <Logo size={32} />
                 <div>
                   <h1 className="text-lg font-semibold text-white">
                     DOCTOR AUTO
