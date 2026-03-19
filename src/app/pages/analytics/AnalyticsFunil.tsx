@@ -1,105 +1,86 @@
-import { useState } from "react";
-import { TrendingUp, Users, DollarSign, Target } from "lucide-react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../../components/ui/card";
-import { Progress } from "../../components/ui/progress";
-import { FunnelChart, Funnel, LabelList, Tooltip, ResponsiveContainer } from "recharts";
+﻿import { useState, useEffect } from "react";
+import { TrendingDown, RefreshCw, Loader2 } from "lucide-react";
+import { Button } from "../../components/ui/button";
+import { Card, CardHeader, CardTitle, CardContent, CardDescription } from "../../components/ui/card";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from "recharts";
 import AdminLayout from "../../components/AdminLayout";
+import { createClient } from "@supabase/supabase-js";
+
+const sb = createClient("https://acuufrgoyjwzlyhopaus.supabase.co","eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFjdXVmcmdveWp3emx5aG9wYXVzIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2ODI2Mjk4OCwiZXhwIjoyMDgzODM4OTg4fQ.mCMQoBXRwSNrd1VgEa1uHCJwP3mcto5xjlt3LF6VUO4");
+
+const STATUS_ORDER = ["diagnostico","orcamento","aguardando_aprovacao","aprovado","em_execucao","concluido","entregue"];
+const STATUS_LABELS: Record<string,string> = {
+  diagnostico:"Diagnóstico", orcamento:"Orçamento", aguardando_aprovacao:"Ag. Aprovação",
+  aprovado:"Aprovado", em_execucao:"Em Execução", concluido:"Concluído", entregue:"Entregue"
+};
+const COLORS = ["#94a3b8","#f59e0b","#f97316","#3b82f6","#8b5cf6","#22c55e","#10b981"];
 
 export default function AnalyticsFunil() {
-  const funnelData = [
-    { etapa: "Leads Gerados", valor: 100, quantidade: 250, cor: "#3b82f6" },
-    { etapa: "Primeiro Contato", valor: 68, quantidade: 170, cor: "#8b5cf6" },
-    { etapa: "Orçamento Enviado", valor: 48, quantidade: 120, cor: "#f59e0b" },
-    { etapa: "Negociação", valor: 32, quantidade: 80, cor: "#22c55e" },
-    { etapa: "Venda Fechada", valor: 20, quantidade: 50, cor: "#ef4444" },
-  ];
+  const [data, setData] = useState<any[]>([]);
+  const [totais, setTotais] = useState({ total:0, cancelados:0, taxa:0, faturamento:0 });
+  const [loading, setLoading] = useState(true);
 
-  const stats = {
-    taxaConversao: 20,
-    ticketMedio: 1850,
-    faturamentoTotal: 92500,
-    tempoCiclo: 8.5,
-  };
+  useEffect(() => { load(); }, []);
+
+  async function load() {
+    setLoading(true);
+    const { data: rows } = await sb.from("06_OS").select("status,valor_total");
+    const counts: Record<string,number> = {};
+    let cancelados = 0, faturamento = 0;
+    (rows||[]).forEach(r => {
+      if (r.status === "cancelado") { cancelados++; return; }
+      counts[r.status] = (counts[r.status]||0)+1;
+      if (["concluido","entregue"].includes(r.status)) faturamento += r.valor_total||0;
+    });
+    const total = (rows||[]).length;
+    const entregues = counts["entregue"]||0;
+    const taxa = total > 0 ? Math.round((entregues/total)*100) : 0;
+    setData(STATUS_ORDER.map((s,i) => ({ name: STATUS_LABELS[s], value: counts[s]||0, color: COLORS[i] })));
+    setTotais({ total, cancelados, taxa, faturamento });
+    setLoading(false);
+  }
+
+  const fmt = (v:number) => v.toLocaleString("pt-BR",{style:"currency",currency:"BRL"});
 
   return (
     <AdminLayout>
-      <div className="container mx-auto p-6 space-y-6">
-        <div>
-          <h1 className="text-3xl font-bold text-white flex items-center gap-2">
-            <TrendingUp className="h-8 w-8 text-green-500" />
-            Funil de Vendas
-          </h1>
-          <p className="text-zinc-400 mt-1">
-            Análise completa do processo de conversão
-          </p>
+      <div className="p-6 max-w-5xl mx-auto space-y-6">
+        <div className="flex items-center justify-between">
+          <div><h1 className="text-3xl font-bold text-white flex items-center gap-2"><TrendingDown className="h-8 w-8 text-blue-400"/>Funil de OS</h1>
+            <p className="text-zinc-400 mt-1">Distribuição por status — todas as OS</p></div>
+          <Button onClick={load} variant="outline" className="border-zinc-700 text-zinc-300"><RefreshCw className={"h-4 w-4"+(loading?" animate-spin":"")}/></Button>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <Card className="bg-green-950 border-green-800">
-            <CardHeader className="pb-3">
-              <CardDescription className="text-green-300">Taxa de Conversão</CardDescription>
-              <CardTitle className="text-4xl text-white">{stats.taxaConversao}%</CardTitle>
-            </CardHeader>
-          </Card>
-
-          <Card className="bg-blue-950 border-blue-800">
-            <CardHeader className="pb-3">
-              <CardDescription className="text-blue-300">Ticket Médio</CardDescription>
-              <CardTitle className="text-3xl text-white">
-                {stats.ticketMedio.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
-              </CardTitle>
-            </CardHeader>
-          </Card>
-
-          <Card className="bg-purple-950 border-purple-800">
-            <CardHeader className="pb-3">
-              <CardDescription className="text-purple-300">Faturamento Total</CardDescription>
-              <CardTitle className="text-2xl text-white">
-                {stats.faturamentoTotal.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
-              </CardTitle>
-            </CardHeader>
-          </Card>
-
-          <Card className="bg-orange-950 border-orange-800">
-            <CardHeader className="pb-3">
-              <CardDescription className="text-orange-300">Tempo de Ciclo</CardDescription>
-              <CardTitle className="text-4xl text-white">{stats.tempoCiclo}d</CardTitle>
-            </CardHeader>
-          </Card>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          {[
+            { label:"Total OS", value:totais.total.toString(), color:"text-white" },
+            { label:"Canceladas", value:totais.cancelados.toString(), color:"text-red-400" },
+            { label:"Taxa Entrega", value:totais.taxa+"%", color:"text-green-400" },
+            { label:"Faturamento", value:fmt(totais.faturamento), color:"text-green-400" },
+          ].map(k => (
+            <Card key={k.label} className="bg-zinc-900 border-zinc-800 p-4">
+              <p className="text-xs text-zinc-400">{k.label}</p>
+              <p className={"text-2xl font-bold "+k.color}>{loading?"—":k.value}</p>
+            </Card>
+          ))}
         </div>
 
         <Card className="bg-zinc-900 border-zinc-800">
-          <CardHeader>
-            <CardTitle className="text-white">Funil de Conversão</CardTitle>
-            <CardDescription className="text-zinc-400">
-              Do lead até o fechamento
-            </CardDescription>
-          </CardHeader>
+          <CardHeader><CardTitle className="text-white">OS por Status</CardTitle><CardDescription className="text-zinc-400">Volume em cada etapa do funil</CardDescription></CardHeader>
           <CardContent>
-            <div className="space-y-4">
-              {funnelData.map((etapa, index) => (
-                <div key={etapa.etapa}>
-                  <div className="flex items-center justify-between mb-2">
-                    <div>
-                      <span className="text-white font-semibold">{etapa.etapa}</span>
-                      <span className="text-zinc-400 text-sm ml-2">({etapa.quantidade} leads)</span>
-                    </div>
-                    <div className="text-xl font-bold text-white">{etapa.valor}%</div>
-                  </div>
-                  <Progress value={etapa.valor} className="h-6" style={{ backgroundColor: `${etapa.cor}20` }}>
-                    <div 
-                      className="h-full rounded-full transition-all"
-                      style={{ width: `${etapa.valor}%`, backgroundColor: etapa.cor }}
-                    />
-                  </Progress>
-                  {index < funnelData.length - 1 && (
-                    <div className="text-center text-sm text-zinc-500 my-1">
-                      ⬇ {Math.round((funnelData[index + 1].quantidade / etapa.quantidade) * 100)}% conversão
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
+            {loading ? <div className="flex justify-center py-12"><Loader2 className="h-6 w-6 animate-spin"/></div>
+            : data.every(d => d.value===0) ? <p className="text-zinc-500 text-sm text-center py-12">Nenhuma OS ainda — crie a primeira OS para ver o funil</p>
+            : <ResponsiveContainer width="100%" height={320}>
+                <BarChart data={data} layout="vertical">
+                  <CartesianGrid strokeDasharray="3 3" stroke="#3f3f46"/>
+                  <XAxis type="number" stroke="#71717a"/>
+                  <YAxis type="category" dataKey="name" stroke="#71717a" width={130}/>
+                  <Tooltip contentStyle={{backgroundColor:"#18181b",border:"1px solid #3f3f46",borderRadius:"8px"}}/>
+                  <Bar dataKey="value" radius={[0,6,6,0]}>
+                    {data.map((e,i) => <Cell key={i} fill={e.color}/>)}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>}
           </CardContent>
         </Card>
       </div>

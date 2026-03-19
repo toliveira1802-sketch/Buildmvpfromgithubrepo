@@ -1,452 +1,93 @@
-import { useState } from "react";
-import {
-  Settings,
-  Building2,
-  User,
-  Bell,
-  Lock,
-  Palette,
-  Database,
-  Save,
-  Mail,
-  Phone,
-  MapPin,
-} from "lucide-react";
+﻿import { useState, useEffect } from "react";
+import { Settings, RefreshCw, Loader2, Building, Database, Users, Car, FileText, Wrench } from "lucide-react";
 import { Button } from "../../components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../../components/ui/card";
-import { Input } from "../../components/ui/input";
-import { Label } from "../../components/ui/label";
-import { Textarea } from "../../components/ui/textarea";
-import { Switch } from "../../components/ui/switch";
-import { Separator } from "../../components/ui/separator";
-import { toast } from "sonner";
+import { Card, CardHeader, CardTitle, CardContent } from "../../components/ui/card";
 import AdminLayout from "../../components/AdminLayout";
+import { createClient } from "@supabase/supabase-js";
+const sb = createClient("https://acuufrgoyjwzlyhopaus.supabase.co","eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFjdXVmcmdveWp3emx5aG9wYXVzIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2ODI2Mjk4OCwiZXhwIjoyMDgzODM4OTg4fQ.mCMQoBXRwSNrd1VgEa1uHCJwP3mcto5xjlt3LF6VUO4");
 
 export default function AdminConfiguracoes() {
-  const [empresaData, setEmpresaData] = useState({
-    nome: "Doctor Auto Oficina Mecânica",
-    cnpj: "12.345.678/0001-90",
-    telefone: "(11) 3456-7890",
-    email: "contato@doctorauto.com.br",
-    endereco: "Av. Paulista, 1000",
-    cidade: "São Paulo",
-    estado: "SP",
-    cep: "01310-100",
-  });
+  const [empresa, setEmpresa] = useState<any>(null);
+  const [stats, setStats] = useState({ usuarios:0, clientes:0, veiculos:0, os:0, mecanicos:0 });
+  const [loading, setLoading] = useState(true);
 
-  const [notificacoes, setNotificacoes] = useState({
-    emailNovaSO: true,
-    emailSOConcluida: true,
-    emailAgendamento: false,
-    smsCliente: true,
-    smsLembrete: false,
-  });
+  useEffect(() => { load(); }, []);
 
-  const [sistema, setSistema] = useState({
-    darkMode: true,
-    autoBackup: true,
-    loginDuplo: false,
-    logAuditoria: true,
-  });
+  async function load() {
+    setLoading(true);
+    const [emp, users, cli, veic, os, mecs] = await Promise.all([
+      sb.from("00_companies").select("*").limit(1).single(),
+      sb.from("10_users").select("id",{count:"exact",head:true}),
+      sb.from("04_CLIENTS").select("id",{count:"exact",head:true}),
+      sb.from("05_VEHICLES").select("id",{count:"exact",head:true}),
+      sb.from("06_OS").select("id",{count:"exact",head:true}),
+      sb.from("12_MECANICOS").select("id",{count:"exact",head:true}),
+    ]);
+    setEmpresa(emp.data);
+    setStats({ usuarios:users.count||0, clientes:cli.count||0, veiculos:veic.count||0, os:os.count||0, mecanicos:mecs.count||0 });
+    setLoading(false);
+  }
 
-  const handleSaveEmpresa = () => {
-    toast.success("Dados da empresa salvos com sucesso!");
-  };
-
-  const handleSaveNotificacoes = () => {
-    toast.success("Configurações de notificações salvas!");
-  };
-
-  const handleSaveSistema = () => {
-    toast.success("Configurações do sistema salvas!");
-  };
+  const STATS = [
+    { label:"Usuários", value:stats.usuarios, icon:Users, color:"text-purple-400" },
+    { label:"Clientes", value:stats.clientes, icon:Users, color:"text-blue-400" },
+    { label:"Veículos", value:stats.veiculos, icon:Car, color:"text-cyan-400" },
+    { label:"OS Total", value:stats.os, icon:FileText, color:"text-green-400" },
+    { label:"Mecânicos", value:stats.mecanicos, icon:Wrench, color:"text-orange-400" },
+  ];
 
   return (
     <AdminLayout>
-      <div className="container mx-auto p-6 space-y-6">
-        {/* Header */}
-        <div>
-          <h1 className="text-3xl font-bold text-white">Configurações</h1>
-          <p className="text-zinc-400 mt-1">
-            Gerencie as configurações do sistema
-          </p>
+      <div className="p-6 max-w-4xl mx-auto space-y-6">
+        <div className="flex items-center justify-between">
+          <div><h1 className="text-3xl font-bold text-white flex items-center gap-2"><Settings className="h-8 w-8 text-zinc-400"/>Configurações</h1>
+            <p className="text-zinc-400 mt-1">Dados do sistema e empresa</p></div>
+          <Button onClick={load} variant="outline" className="border-zinc-700 text-zinc-300"><RefreshCw className={"h-4 w-4"+(loading?" animate-spin":"")}/></Button>
         </div>
 
-        {/* Dados da Empresa */}
+        {empresa && (
+          <Card className="bg-zinc-900 border-zinc-800">
+            <CardHeader><CardTitle className="text-white flex items-center gap-2"><Building className="h-5 w-5 text-blue-400"/>Empresa</CardTitle></CardHeader>
+            <CardContent className="grid grid-cols-2 gap-4 text-sm">
+              <div><p className="text-zinc-500 text-xs">Nome</p><p className="text-white font-medium">{empresa.nome||empresa.name||"—"}</p></div>
+              <div><p className="text-zinc-500 text-xs">CNPJ</p><p className="text-zinc-300 font-mono">{empresa.cnpj||"—"}</p></div>
+              <div><p className="text-zinc-500 text-xs">Telefone</p><p className="text-zinc-300">{empresa.telefone||"—"}</p></div>
+              <div><p className="text-zinc-500 text-xs">Email</p><p className="text-zinc-300">{empresa.email||"—"}</p></div>
+              <div><p className="text-zinc-500 text-xs">Cidade</p><p className="text-zinc-300">{empresa.cidade||"—"} {empresa.estado&&"/ "+empresa.estado}</p></div>
+              <div><p className="text-zinc-500 text-xs">Rede</p><p className="text-zinc-300">{empresa.rede||"Doctor Auto"}</p></div>
+            </CardContent>
+          </Card>
+        )}
+
         <Card className="bg-zinc-900 border-zinc-800">
-          <CardHeader>
-            <CardTitle className="text-white flex items-center gap-2">
-              <Building2 className="h-5 w-5" />
-              Dados da Empresa
-            </CardTitle>
-            <CardDescription className="text-zinc-400">
-              Informações gerais da empresa
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="md:col-span-2">
-                <Label className="text-zinc-300">Nome da Empresa</Label>
-                <Input
-                  value={empresaData.nome}
-                  onChange={(e) =>
-                    setEmpresaData({ ...empresaData, nome: e.target.value })
-                  }
-                  className="bg-zinc-800 border-zinc-700 text-white"
-                />
-              </div>
-
-              <div>
-                <Label className="text-zinc-300">CNPJ</Label>
-                <Input
-                  value={empresaData.cnpj}
-                  onChange={(e) =>
-                    setEmpresaData({ ...empresaData, cnpj: e.target.value })
-                  }
-                  className="bg-zinc-800 border-zinc-700 text-white"
-                />
-              </div>
-
-              <div>
-                <Label className="text-zinc-300">Telefone</Label>
-                <div className="relative">
-                  <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-zinc-500" />
-                  <Input
-                    value={empresaData.telefone}
-                    onChange={(e) =>
-                      setEmpresaData({ ...empresaData, telefone: e.target.value })
-                    }
-                    className="pl-10 bg-zinc-800 border-zinc-700 text-white"
-                  />
+          <CardHeader><CardTitle className="text-white flex items-center gap-2"><Database className="h-5 w-5 text-green-400"/>Banco de Dados</CardTitle></CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+              {STATS.map(s => { const Icon = s.icon; return (
+                <div key={s.label} className="text-center p-3 bg-zinc-800 rounded-lg">
+                  <Icon className={"h-6 w-6 mx-auto mb-1 "+s.color}/>
+                  <p className={"text-xl font-bold "+s.color}>{loading?"—":s.value}</p>
+                  <p className="text-zinc-500 text-xs">{s.label}</p>
                 </div>
-              </div>
-
-              <div className="md:col-span-2">
-                <Label className="text-zinc-300">Email</Label>
-                <div className="relative">
-                  <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-zinc-500" />
-                  <Input
-                    type="email"
-                    value={empresaData.email}
-                    onChange={(e) =>
-                      setEmpresaData({ ...empresaData, email: e.target.value })
-                    }
-                    className="pl-10 bg-zinc-800 border-zinc-700 text-white"
-                  />
-                </div>
-              </div>
-
-              <div className="md:col-span-2">
-                <Label className="text-zinc-300">Endereço</Label>
-                <div className="relative">
-                  <MapPin className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-zinc-500" />
-                  <Input
-                    value={empresaData.endereco}
-                    onChange={(e) =>
-                      setEmpresaData({ ...empresaData, endereco: e.target.value })
-                    }
-                    className="pl-10 bg-zinc-800 border-zinc-700 text-white"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <Label className="text-zinc-300">Cidade</Label>
-                <Input
-                  value={empresaData.cidade}
-                  onChange={(e) =>
-                    setEmpresaData({ ...empresaData, cidade: e.target.value })
-                  }
-                  className="bg-zinc-800 border-zinc-700 text-white"
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label className="text-zinc-300">Estado</Label>
-                  <Input
-                    value={empresaData.estado}
-                    onChange={(e) =>
-                      setEmpresaData({ ...empresaData, estado: e.target.value })
-                    }
-                    className="bg-zinc-800 border-zinc-700 text-white"
-                    maxLength={2}
-                  />
-                </div>
-                <div>
-                  <Label className="text-zinc-300">CEP</Label>
-                  <Input
-                    value={empresaData.cep}
-                    onChange={(e) =>
-                      setEmpresaData({ ...empresaData, cep: e.target.value })
-                    }
-                    className="bg-zinc-800 border-zinc-700 text-white"
-                  />
-                </div>
-              </div>
-            </div>
-
-            <Separator className="bg-zinc-800" />
-
-            <div className="flex justify-end">
-              <Button onClick={handleSaveEmpresa} className="bg-green-600 hover:bg-green-700">
-                <Save className="h-4 w-4 mr-2" />
-                Salvar Alterações
-              </Button>
+              );})}
             </div>
           </CardContent>
         </Card>
 
-        {/* Notificações */}
         <Card className="bg-zinc-900 border-zinc-800">
-          <CardHeader>
-            <CardTitle className="text-white flex items-center gap-2">
-              <Bell className="h-5 w-5" />
-              Notificações
-            </CardTitle>
-            <CardDescription className="text-zinc-400">
-              Configure como deseja receber notificações
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <div className="space-y-0.5">
-                  <Label className="text-white">Email - Nova Ordem de Serviço</Label>
-                  <p className="text-sm text-zinc-400">
-                    Receba email quando uma nova OS for criada
-                  </p>
-                </div>
-                <Switch
-                  checked={notificacoes.emailNovaSO}
-                  onCheckedChange={(checked) =>
-                    setNotificacoes({ ...notificacoes, emailNovaSO: checked })
-                  }
-                />
+          <CardHeader><CardTitle className="text-white">Informações do Sistema</CardTitle></CardHeader>
+          <CardContent className="space-y-3 text-sm">
+            {[
+              { label:"Projeto Supabase", value:"acuufrgoyjwzlyhopaus" },
+              { label:"Ambiente", value:"Produção" },
+              { label:"Versão", value:"MVP v1.0" },
+              { label:"Stack", value:"React 19 + Vite + TypeScript + Supabase" },
+            ].map(item => (
+              <div key={item.label} className="flex items-center justify-between py-2 border-b border-zinc-800">
+                <span className="text-zinc-400">{item.label}</span>
+                <span className="text-zinc-200 font-mono text-xs">{item.value}</span>
               </div>
-
-              <Separator className="bg-zinc-800" />
-
-              <div className="flex items-center justify-between">
-                <div className="space-y-0.5">
-                  <Label className="text-white">Email - OS Concluída</Label>
-                  <p className="text-sm text-zinc-400">
-                    Receba email quando uma OS for concluída
-                  </p>
-                </div>
-                <Switch
-                  checked={notificacoes.emailSOConcluida}
-                  onCheckedChange={(checked) =>
-                    setNotificacoes({ ...notificacoes, emailSOConcluida: checked })
-                  }
-                />
-              </div>
-
-              <Separator className="bg-zinc-800" />
-
-              <div className="flex items-center justify-between">
-                <div className="space-y-0.5">
-                  <Label className="text-white">Email - Novo Agendamento</Label>
-                  <p className="text-sm text-zinc-400">
-                    Receba email quando houver um novo agendamento
-                  </p>
-                </div>
-                <Switch
-                  checked={notificacoes.emailAgendamento}
-                  onCheckedChange={(checked) =>
-                    setNotificacoes({ ...notificacoes, emailAgendamento: checked })
-                  }
-                />
-              </div>
-
-              <Separator className="bg-zinc-800" />
-
-              <div className="flex items-center justify-between">
-                <div className="space-y-0.5">
-                  <Label className="text-white">SMS - Notificações aos Clientes</Label>
-                  <p className="text-sm text-zinc-400">
-                    Envie SMS automático aos clientes
-                  </p>
-                </div>
-                <Switch
-                  checked={notificacoes.smsCliente}
-                  onCheckedChange={(checked) =>
-                    setNotificacoes({ ...notificacoes, smsCliente: checked })
-                  }
-                />
-              </div>
-
-              <Separator className="bg-zinc-800" />
-
-              <div className="flex items-center justify-between">
-                <div className="space-y-0.5">
-                  <Label className="text-white">SMS - Lembretes de Agendamento</Label>
-                  <p className="text-sm text-zinc-400">
-                    Envie lembretes 24h antes dos agendamentos
-                  </p>
-                </div>
-                <Switch
-                  checked={notificacoes.smsLembrete}
-                  onCheckedChange={(checked) =>
-                    setNotificacoes({ ...notificacoes, smsLembrete: checked })
-                  }
-                />
-              </div>
-            </div>
-
-            <Separator className="bg-zinc-800" />
-
-            <div className="flex justify-end">
-              <Button onClick={handleSaveNotificacoes} className="bg-green-600 hover:bg-green-700">
-                <Save className="h-4 w-4 mr-2" />
-                Salvar Alterações
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Sistema */}
-        <Card className="bg-zinc-900 border-zinc-800">
-          <CardHeader>
-            <CardTitle className="text-white flex items-center gap-2">
-              <Settings className="h-5 w-5" />
-              Sistema
-            </CardTitle>
-            <CardDescription className="text-zinc-400">
-              Configurações gerais do sistema
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <div className="space-y-0.5">
-                  <Label className="text-white">Modo Escuro</Label>
-                  <p className="text-sm text-zinc-400">
-                    Utilize o tema escuro no sistema
-                  </p>
-                </div>
-                <Switch
-                  checked={sistema.darkMode}
-                  onCheckedChange={(checked) =>
-                    setSistema({ ...sistema, darkMode: checked })
-                  }
-                />
-              </div>
-
-              <Separator className="bg-zinc-800" />
-
-              <div className="flex items-center justify-between">
-                <div className="space-y-0.5">
-                  <Label className="text-white">Backup Automático</Label>
-                  <p className="text-sm text-zinc-400">
-                    Realiza backup diário automático dos dados
-                  </p>
-                </div>
-                <Switch
-                  checked={sistema.autoBackup}
-                  onCheckedChange={(checked) =>
-                    setSistema({ ...sistema, autoBackup: checked })
-                  }
-                />
-              </div>
-
-              <Separator className="bg-zinc-800" />
-
-              <div className="flex items-center justify-between">
-                <div className="space-y-0.5">
-                  <Label className="text-white">Login em Múltiplos Dispositivos</Label>
-                  <p className="text-sm text-zinc-400">
-                    Permite login simultâneo em mais de um dispositivo
-                  </p>
-                </div>
-                <Switch
-                  checked={sistema.loginDuplo}
-                  onCheckedChange={(checked) =>
-                    setSistema({ ...sistema, loginDuplo: checked })
-                  }
-                />
-              </div>
-
-              <Separator className="bg-zinc-800" />
-
-              <div className="flex items-center justify-between">
-                <div className="space-y-0.5">
-                  <Label className="text-white">Log de Auditoria</Label>
-                  <p className="text-sm text-zinc-400">
-                    Registra todas as ações dos usuários no sistema
-                  </p>
-                </div>
-                <Switch
-                  checked={sistema.logAuditoria}
-                  onCheckedChange={(checked) =>
-                    setSistema({ ...sistema, logAuditoria: checked })
-                  }
-                />
-              </div>
-            </div>
-
-            <Separator className="bg-zinc-800" />
-
-            <div className="flex justify-end">
-              <Button onClick={handleSaveSistema} className="bg-green-600 hover:bg-green-700">
-                <Save className="h-4 w-4 mr-2" />
-                Salvar Alterações
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Segurança */}
-        <Card className="bg-zinc-900 border-zinc-800">
-          <CardHeader>
-            <CardTitle className="text-white flex items-center gap-2">
-              <Lock className="h-5 w-5" />
-              Segurança
-            </CardTitle>
-            <CardDescription className="text-zinc-400">
-              Alterar senha e configurações de segurança
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <Label className="text-zinc-300">Senha Atual</Label>
-                <Input
-                  type="password"
-                  placeholder="••••••••"
-                  className="bg-zinc-800 border-zinc-700 text-white"
-                />
-              </div>
-              <div></div>
-              <div>
-                <Label className="text-zinc-300">Nova Senha</Label>
-                <Input
-                  type="password"
-                  placeholder="••••••••"
-                  className="bg-zinc-800 border-zinc-700 text-white"
-                />
-              </div>
-              <div>
-                <Label className="text-zinc-300">Confirmar Nova Senha</Label>
-                <Input
-                  type="password"
-                  placeholder="••••••••"
-                  className="bg-zinc-800 border-zinc-700 text-white"
-                />
-              </div>
-            </div>
-
-            <Separator className="bg-zinc-800" />
-
-            <div className="flex justify-end">
-              <Button
-                onClick={() => toast.success("Senha alterada com sucesso!")}
-                className="bg-red-600 hover:bg-red-700"
-              >
-                <Lock className="h-4 w-4 mr-2" />
-                Alterar Senha
-              </Button>
-            </div>
+            ))}
           </CardContent>
         </Card>
       </div>
