@@ -1,572 +1,116 @@
-import { useState } from "react";
+﻿import { useState, useEffect } from "react";
 import { useNavigate } from "react-router";
-import {
-  Users,
-  Search,
-  Plus,
-  Edit2,
-  Eye,
-  Car,
-  Phone,
-  Mail,
-  MapPin,
-  RefreshCw,
-  Filter,
-} from "lucide-react";
+import { Users, Search, RefreshCw, Loader2, Plus, Phone, Mail, Car } from "lucide-react";
 import { Button } from "../../components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../../components/ui/card";
 import { Input } from "../../components/ui/input";
 import { Badge } from "../../components/ui/badge";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "../../components/ui/dialog";
-import { Label } from "../../components/ui/label";
-import { toast } from "sonner";
+import { Card } from "../../components/ui/card";
 import AdminLayout from "../../components/AdminLayout";
+import { createClient } from "@supabase/supabase-js";
+
+const sb = createClient(
+  "https://acuufrgoyjwzlyhopaus.supabase.co",
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFjdXVmcmdveWp3emx5aG9wYXVzIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2ODI2Mjk4OCwiZXhwIjoyMDgzODM4OTg4fQ.mCMQoBXRwSNrd1VgEa1uHCJwP3mcto5xjlt3LF6VUO4"
+);
 
 interface Cliente {
-  id: string;
-  nome: string;
-  cpf: string;
-  telefone: string;
-  email: string;
-  endereco: string;
-  cidade: string;
-  veiculos: number;
-  ultimaVisita: string;
-  totalGasto: number;
+  id:number; full_name:string; email:string|null; phone:string|null;
+  cpf:string|null; cidade:string|null; status_cadastro:string|null; created_at:string;
+  _osCount?:number;
 }
 
 export default function AdminClientes() {
   const navigate = useNavigate();
-  const [searchTerm, setSearchTerm] = useState("");
-  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
-  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
-  const [editingCliente, setEditingCliente] = useState<Cliente | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
+  const [clientes, setClientes] = useState<Cliente[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState("");
+  const [page, setPage] = useState(0);
+  const [total, setTotal] = useState(0);
+  const PAGE = 20;
 
-  const [formData, setFormData] = useState({
-    nome: "",
-    cpf: "",
-    telefone: "",
-    email: "",
-    endereco: "",
-    cidade: "",
-  });
+  useEffect(() => { load(); }, [page]);
 
-  const [clientes, setClientes] = useState<Cliente[]>([
-    {
-      id: "CLI-001",
-      nome: "Carlos Silva",
-      cpf: "123.456.789-00",
-      telefone: "(11) 98765-4321",
-      email: "carlos@email.com",
-      endereco: "Rua das Flores, 123",
-      cidade: "São Paulo - SP",
-      veiculos: 2,
-      ultimaVisita: "2026-03-10",
-      totalGasto: 5420.00,
-    },
-    {
-      id: "CLI-002",
-      nome: "Maria Santos",
-      cpf: "234.567.890-11",
-      telefone: "(11) 91234-5678",
-      email: "maria@email.com",
-      endereco: "Av. Paulista, 1000",
-      cidade: "São Paulo - SP",
-      veiculos: 1,
-      ultimaVisita: "2026-03-08",
-      totalGasto: 2850.00,
-    },
-    {
-      id: "CLI-003",
-      nome: "João Oliveira",
-      cpf: "345.678.901-22",
-      telefone: "(11) 99876-5432",
-      email: "joao@email.com",
-      endereco: "Rua Augusta, 456",
-      cidade: "São Paulo - SP",
-      veiculos: 3,
-      ultimaVisita: "2026-03-05",
-      totalGasto: 8920.00,
-    },
-    {
-      id: "CLI-004",
-      nome: "Ana Costa",
-      cpf: "456.789.012-33",
-      telefone: "(11) 97654-3210",
-      email: "ana@email.com",
-      endereco: "Rua Consolação, 789",
-      cidade: "São Paulo - SP",
-      veiculos: 1,
-      ultimaVisita: "2026-02-28",
-      totalGasto: 1450.00,
-    },
-    {
-      id: "CLI-005",
-      nome: "Pedro Almeida",
-      cpf: "567.890.123-44",
-      telefone: "(11) 96543-2109",
-      email: "pedro@email.com",
-      endereco: "Av. Faria Lima, 2500",
-      cidade: "São Paulo - SP",
-      veiculos: 2,
-      ultimaVisita: "2026-03-12",
-      totalGasto: 6780.00,
-    },
-  ]);
+  async function load() {
+    setLoading(true);
+    const [{ data, count }] = await Promise.all([
+      sb.from("04_CLIENTS").select("id,full_name,email,phone,cpf,cidade,status_cadastro,created_at", { count:"exact" })
+        .order("created_at",{ascending:false})
+        .range(page*PAGE, (page+1)*PAGE-1)
+    ]);
+    setClientes(data||[]);
+    setTotal(count||0);
+    setLoading(false);
+  }
 
-  const filteredClientes = clientes.filter((cliente) =>
-    cliente.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    cliente.cpf.includes(searchTerm) ||
-    cliente.telefone.includes(searchTerm) ||
-    cliente.email.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  async function buscar() {
+    if (!search.trim()) { load(); return; }
+    setLoading(true);
+    const { data } = await sb.from("04_CLIENTS")
+      .select("id,full_name,email,phone,cpf,cidade,status_cadastro,created_at")
+      .or("full_name.ilike.%"+search+"%,phone.ilike.%"+search+"%,cpf.ilike.%"+search+"%,email.ilike.%"+search+"%")
+      .order("created_at",{ascending:false}).limit(50);
+    setClientes(data||[]);
+    setLoading(false);
+  }
 
-  const handleCreateCliente = () => {
-    const newCliente: Cliente = {
-      id: `CLI-${String(clientes.length + 1).padStart(3, "0")}`,
-      nome: formData.nome,
-      cpf: formData.cpf,
-      telefone: formData.telefone,
-      email: formData.email,
-      endereco: formData.endereco,
-      cidade: formData.cidade,
-      veiculos: 0,
-      ultimaVisita: new Date().toISOString().split("T")[0],
-      totalGasto: 0,
-    };
-
-    setClientes([...clientes, newCliente]);
-    toast.success("Cliente cadastrado com sucesso!");
-    setIsCreateDialogOpen(false);
-    resetForm();
-  };
-
-  const handleEditCliente = (cliente: Cliente) => {
-    setEditingCliente(cliente);
-    setFormData({
-      nome: cliente.nome,
-      cpf: cliente.cpf,
-      telefone: cliente.telefone,
-      email: cliente.email,
-      endereco: cliente.endereco,
-      cidade: cliente.cidade,
-    });
-    setIsEditDialogOpen(true);
-  };
-
-  const handleUpdateCliente = () => {
-    if (!editingCliente) return;
-
-    setClientes(clientes.map(c => 
-      c.id === editingCliente.id 
-        ? { ...c, ...formData }
-        : c
-    ));
-    
-    toast.success("Cliente atualizado com sucesso!");
-    setIsEditDialogOpen(false);
-    setEditingCliente(null);
-    resetForm();
-  };
-
-  const resetForm = () => {
-    setFormData({
-      nome: "",
-      cpf: "",
-      telefone: "",
-      email: "",
-      endereco: "",
-      cidade: "",
-    });
-  };
-
-  const stats = {
-    total: clientes.length,
-    novos: clientes.filter(
-      (c) =>
-        new Date(c.ultimaVisita).getMonth() === new Date().getMonth()
-    ).length,
-    ativos: clientes.filter(
-      (c) =>
-        new Date(c.ultimaVisita) >
-        new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
-    ).length,
-    totalGasto: clientes.reduce((sum, c) => sum + c.totalGasto, 0),
-  };
+  const fmtDate = (d:string) => new Date(d).toLocaleDateString("pt-BR");
 
   return (
     <AdminLayout>
-      <div className="container mx-auto p-6 space-y-6">
-        {/* Header */}
+      <div className="p-6 space-y-6 max-w-7xl mx-auto">
         <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold text-white">Clientes</h1>
-            <p className="text-zinc-400 mt-1">
-              Gerencie sua base de clientes
-            </p>
+          <div><h1 className="text-3xl font-bold text-white flex items-center gap-2"><Users className="h-8 w-8 text-blue-400"/>Clientes</h1>
+            <p className="text-zinc-400 mt-1">{total} clientes cadastrados em 04_CLIENTS</p>
           </div>
-          <div className="flex gap-2">
-            <Button variant="outline" onClick={() => setIsLoading(!isLoading)}>
-              <RefreshCw className={`h-4 w-4 mr-2 ${isLoading ? "animate-spin" : ""}`} />
-              Atualizar
-            </Button>
-            <Button
-              onClick={() => setIsCreateDialogOpen(true)}
-              className="bg-red-600 hover:bg-red-700"
-            >
-              <Plus className="h-4 w-4 mr-2" />
-              Novo Cliente
-            </Button>
-          </div>
+          <Button onClick={() => navigate("/ordens-servico/nova")} className="bg-red-600 hover:bg-red-700"><Plus className="h-4 w-4 mr-2"/>Nova OS</Button>
         </div>
 
-        {/* Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <Card className="bg-zinc-900 border-zinc-800">
-            <CardHeader className="pb-3">
-              <CardDescription className="text-zinc-400">Total de Clientes</CardDescription>
-              <CardTitle className="text-3xl text-white">{stats.total}</CardTitle>
-            </CardHeader>
-          </Card>
-
-          <Card className="bg-zinc-900 border-zinc-800">
-            <CardHeader className="pb-3">
-              <CardDescription className="text-zinc-400">Novos (Este Mês)</CardDescription>
-              <CardTitle className="text-3xl text-white">{stats.novos}</CardTitle>
-            </CardHeader>
-          </Card>
-
-          <Card className="bg-zinc-900 border-zinc-800">
-            <CardHeader className="pb-3">
-              <CardDescription className="text-zinc-400">Clientes Ativos</CardDescription>
-              <CardTitle className="text-3xl text-white">{stats.ativos}</CardTitle>
-            </CardHeader>
-          </Card>
-
-          <Card className="bg-zinc-900 border-zinc-800">
-            <CardHeader className="pb-3">
-              <CardDescription className="text-zinc-400">Receita Total</CardDescription>
-              <CardTitle className="text-3xl text-white">
-                {stats.totalGasto.toLocaleString("pt-BR", {
-                  style: "currency",
-                  currency: "BRL",
-                })}
-              </CardTitle>
-            </CardHeader>
-          </Card>
+        <div className="flex gap-3">
+          <div className="relative flex-1"><Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-500"/>
+            <Input value={search} onChange={e => setSearch(e.target.value)} onKeyDown={e => e.key==="Enter" && buscar()}
+              placeholder="Nome, telefone, CPF ou email..." className="pl-10 bg-zinc-800 border-zinc-700 text-white"/>
+          </div>
+          <Button onClick={buscar} className="bg-blue-700 hover:bg-blue-600">Buscar</Button>
+          <Button onClick={() => { setSearch(""); load(); }} variant="outline" className="border-zinc-700 text-zinc-300"><RefreshCw className={"h-4 w-4"+(loading?" animate-spin":"")}/></Button>
         </div>
 
-        {/* Search */}
-        <Card className="bg-zinc-900 border-zinc-800 p-4">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-zinc-500" />
-            <Input
-              placeholder="Buscar por nome, CPF, telefone ou email..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10 bg-zinc-800 border-zinc-700 text-white"
-            />
-          </div>
-        </Card>
-
-        {/* Lista de Clientes */}
-        <Card className="bg-zinc-900 border-zinc-800">
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="border-b border-zinc-800">
-                <tr className="text-left">
-                  <th className="p-4 font-medium text-zinc-300">Cliente</th>
-                  <th className="p-4 font-medium text-zinc-300">Contato</th>
-                  <th className="p-4 font-medium text-zinc-300">Localização</th>
-                  <th className="p-4 font-medium text-zinc-300">Veículos</th>
-                  <th className="p-4 font-medium text-zinc-300">Última Visita</th>
-                  <th className="p-4 font-medium text-zinc-300">Total Gasto</th>
-                  <th className="p-4 font-medium text-zinc-300">Ações</th>
+        <Card className="bg-zinc-900 border-zinc-800 overflow-hidden">
+          <table className="w-full text-sm">
+            <thead className="border-b border-zinc-800"><tr>{["Nome","Contato","CPF","Cidade","Status","Cadastro",""].map(h =>
+              <th key={h} className="px-4 py-3 text-left text-zinc-400 font-medium">{h}</th>
+            )}</tr></thead>
+            <tbody>
+              {loading ? (<tr><td colSpan={7} className="py-16 text-center text-zinc-500"><Loader2 className="h-6 w-6 animate-spin mx-auto mb-2"/>Carregando...</td></tr>)
+              : clientes.length === 0 ? (<tr><td colSpan={7} className="py-16 text-center text-zinc-500">
+                <Users className="h-10 w-10 mx-auto mb-3 opacity-30"/>
+                <p>Nenhum cliente encontrado</p>
+                <p className="text-xs mt-1">Clientes são criados ao abrir uma Nova OS</p>
+              </td></tr>)
+              : clientes.map(c => (
+                <tr key={c.id} className="border-b border-zinc-800/60 hover:bg-zinc-800/30 cursor-pointer" onClick={() => navigate("/clientes/"+c.id)}>
+                  <td className="px-4 py-3"><p className="text-white font-medium">{c.full_name||"—"}</p></td>
+                  <td className="px-4 py-3">
+                    {c.phone && <p className="text-zinc-300 text-xs flex items-center gap-1"><Phone className="h-3 w-3"/>{c.phone}</p>}
+                    {c.email && <p className="text-zinc-500 text-xs flex items-center gap-1"><Mail className="h-3 w-3"/>{c.email}</p>}
+                  </td>
+                  <td className="px-4 py-3 text-zinc-400 font-mono text-xs">{c.cpf||"—"}</td>
+                  <td className="px-4 py-3 text-zinc-400">{c.cidade||"—"}</td>
+                  <td className="px-4 py-3"><Badge className="bg-green-900/40 text-green-300 text-xs border border-green-800">{c.status_cadastro||"ativo"}</Badge></td>
+                  <td className="px-4 py-3 text-zinc-500 text-xs">{fmtDate(c.created_at)}</td>
+                  <td className="px-4 py-3"><Button variant="ghost" size="sm" className="text-zinc-400 hover:text-white text-xs">Ver →</Button></td>
                 </tr>
-              </thead>
-              <tbody>
-                {filteredClientes.length === 0 ? (
-                  <tr>
-                    <td colSpan={7} className="p-8 text-center text-zinc-500">
-                      Nenhum cliente encontrado
-                    </td>
-                  </tr>
-                ) : (
-                  filteredClientes.map((cliente) => (
-                    <tr
-                      key={cliente.id}
-                      className="border-b border-zinc-800 hover:bg-zinc-800/50"
-                    >
-                      <td className="p-4">
-                        <div>
-                          <p className="font-medium text-white">{cliente.nome}</p>
-                          <p className="text-sm text-zinc-400">{cliente.cpf}</p>
-                        </div>
-                      </td>
-                      <td className="p-4">
-                        <div className="space-y-1">
-                          <div className="flex items-center gap-2 text-sm text-zinc-300">
-                            <Phone className="h-3 w-3" />
-                            {cliente.telefone}
-                          </div>
-                          <div className="flex items-center gap-2 text-sm text-zinc-400">
-                            <Mail className="h-3 w-3" />
-                            {cliente.email}
-                          </div>
-                        </div>
-                      </td>
-                      <td className="p-4">
-                        <div className="space-y-1">
-                          <p className="text-sm text-zinc-300">{cliente.endereco}</p>
-                          <div className="flex items-center gap-2 text-sm text-zinc-400">
-                            <MapPin className="h-3 w-3" />
-                            {cliente.cidade}
-                          </div>
-                        </div>
-                      </td>
-                      <td className="p-4">
-                        <div className="flex items-center gap-2">
-                          <Car className="h-4 w-4 text-blue-500" />
-                          <span className="text-white">{cliente.veiculos}</span>
-                        </div>
-                      </td>
-                      <td className="p-4 text-sm text-zinc-300">
-                        {new Date(cliente.ultimaVisita).toLocaleDateString("pt-BR")}
-                      </td>
-                      <td className="p-4">
-                        <span className="text-green-500 font-semibold">
-                          {cliente.totalGasto.toLocaleString("pt-BR", {
-                            style: "currency",
-                            currency: "BRL",
-                          })}
-                        </span>
-                      </td>
-                      <td className="p-4">
-                        <div className="flex gap-2">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => navigate(`/clientes/${cliente.id}`)}
-                            className="hover:bg-zinc-800"
-                          >
-                            <Eye className="h-4 w-4 text-blue-500" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="hover:bg-zinc-800"
-                            onClick={() => handleEditCliente(cliente)}
-                          >
-                            <Edit2 className="h-4 w-4 text-green-500" />
-                          </Button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
+              ))}
+            </tbody>
+          </table>
+          <div className="flex items-center justify-between px-4 py-3 border-t border-zinc-800">
+            <span className="text-zinc-500 text-xs">{total} clientes total | Página {page+1}</span>
+            <div className="flex gap-2">
+              <Button size="sm" variant="outline" disabled={page===0} onClick={() => setPage(p=>p-1)} className="border-zinc-700 text-zinc-300 h-7 text-xs">← Anterior</Button>
+              <Button size="sm" variant="outline" disabled={clientes.length < PAGE} onClick={() => setPage(p=>p+1)} className="border-zinc-700 text-zinc-300 h-7 text-xs">Próxima →</Button>
+            </div>
           </div>
         </Card>
       </div>
-
-      {/* Create Dialog */}
-      <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
-        <DialogContent className="max-w-2xl bg-zinc-900 border-zinc-800 text-white">
-          <DialogHeader>
-            <DialogTitle>Novo Cliente</DialogTitle>
-            <DialogDescription className="text-zinc-400">
-              Cadastre um novo cliente no sistema
-            </DialogDescription>
-          </DialogHeader>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div className="col-span-2">
-              <Label className="text-zinc-300">Nome Completo *</Label>
-              <Input
-                value={formData.nome}
-                onChange={(e) => setFormData({ ...formData, nome: e.target.value })}
-                placeholder="Nome completo do cliente"
-                className="bg-zinc-800 border-zinc-700 text-white"
-              />
-            </div>
-
-            <div>
-              <Label className="text-zinc-300">CPF *</Label>
-              <Input
-                value={formData.cpf}
-                onChange={(e) => setFormData({ ...formData, cpf: e.target.value })}
-                placeholder="000.000.000-00"
-                className="bg-zinc-800 border-zinc-700 text-white"
-              />
-            </div>
-
-            <div>
-              <Label className="text-zinc-300">Telefone *</Label>
-              <Input
-                value={formData.telefone}
-                onChange={(e) => setFormData({ ...formData, telefone: e.target.value })}
-                placeholder="(00) 00000-0000"
-                className="bg-zinc-800 border-zinc-700 text-white"
-              />
-            </div>
-
-            <div className="col-span-2">
-              <Label className="text-zinc-300">Email</Label>
-              <Input
-                type="email"
-                value={formData.email}
-                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                placeholder="email@exemplo.com"
-                className="bg-zinc-800 border-zinc-700 text-white"
-              />
-            </div>
-
-            <div className="col-span-2">
-              <Label className="text-zinc-300">Endereço</Label>
-              <Input
-                value={formData.endereco}
-                onChange={(e) => setFormData({ ...formData, endereco: e.target.value })}
-                placeholder="Rua, número, bairro"
-                className="bg-zinc-800 border-zinc-700 text-white"
-              />
-            </div>
-
-            <div className="col-span-2">
-              <Label className="text-zinc-300">Cidade/Estado</Label>
-              <Input
-                value={formData.cidade}
-                onChange={(e) => setFormData({ ...formData, cidade: e.target.value })}
-                placeholder="Cidade - UF"
-                className="bg-zinc-800 border-zinc-700 text-white"
-              />
-            </div>
-          </div>
-
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => {
-                setIsCreateDialogOpen(false);
-                resetForm();
-              }}
-              className="border-zinc-700 text-zinc-300 hover:bg-zinc-800"
-            >
-              Cancelar
-            </Button>
-            <Button
-              onClick={handleCreateCliente}
-              disabled={!formData.nome || !formData.cpf || !formData.telefone}
-              className="bg-red-600 hover:bg-red-700"
-            >
-              Cadastrar Cliente
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Edit Dialog */}
-      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-        <DialogContent className="max-w-2xl bg-zinc-900 border-zinc-800 text-white">
-          <DialogHeader>
-            <DialogTitle>Editar Cliente</DialogTitle>
-            <DialogDescription className="text-zinc-400">
-              Atualize as informações do cliente
-            </DialogDescription>
-          </DialogHeader>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div className="col-span-2">
-              <Label className="text-zinc-300">Nome Completo *</Label>
-              <Input
-                value={formData.nome}
-                onChange={(e) => setFormData({ ...formData, nome: e.target.value })}
-                placeholder="Nome completo do cliente"
-                className="bg-zinc-800 border-zinc-700 text-white"
-              />
-            </div>
-
-            <div>
-              <Label className="text-zinc-300">CPF *</Label>
-              <Input
-                value={formData.cpf}
-                onChange={(e) => setFormData({ ...formData, cpf: e.target.value })}
-                placeholder="000.000.000-00"
-                className="bg-zinc-800 border-zinc-700 text-white"
-              />
-            </div>
-
-            <div>
-              <Label className="text-zinc-300">Telefone *</Label>
-              <Input
-                value={formData.telefone}
-                onChange={(e) => setFormData({ ...formData, telefone: e.target.value })}
-                placeholder="(00) 00000-0000"
-                className="bg-zinc-800 border-zinc-700 text-white"
-              />
-            </div>
-
-            <div className="col-span-2">
-              <Label className="text-zinc-300">Email</Label>
-              <Input
-                type="email"
-                value={formData.email}
-                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                placeholder="email@exemplo.com"
-                className="bg-zinc-800 border-zinc-700 text-white"
-              />
-            </div>
-
-            <div className="col-span-2">
-              <Label className="text-zinc-300">Endereço</Label>
-              <Input
-                value={formData.endereco}
-                onChange={(e) => setFormData({ ...formData, endereco: e.target.value })}
-                placeholder="Rua, número, bairro"
-                className="bg-zinc-800 border-zinc-700 text-white"
-              />
-            </div>
-
-            <div className="col-span-2">
-              <Label className="text-zinc-300">Cidade/Estado</Label>
-              <Input
-                value={formData.cidade}
-                onChange={(e) => setFormData({ ...formData, cidade: e.target.value })}
-                placeholder="Cidade - UF"
-                className="bg-zinc-800 border-zinc-700 text-white"
-              />
-            </div>
-          </div>
-
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => {
-                setIsEditDialogOpen(false);
-                resetForm();
-              }}
-              className="border-zinc-700 text-zinc-300 hover:bg-zinc-800"
-            >
-              Cancelar
-            </Button>
-            <Button
-              onClick={handleUpdateCliente}
-              disabled={!formData.nome || !formData.cpf || !formData.telefone}
-              className="bg-red-600 hover:bg-red-700"
-            >
-              Atualizar Cliente
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </AdminLayout>
   );
 }
