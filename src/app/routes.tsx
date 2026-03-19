@@ -1,4 +1,4 @@
-import { createBrowserRouter, redirect } from "react-router";
+﻿import { createBrowserRouter, redirect } from "react-router";
 import Landing from "./pages/Landing";
 import Login from "./pages/Login";
 import DevLogin from "./pages/DevLogin";
@@ -8,6 +8,7 @@ import DevDashboard from "./pages/DevDashboard";
 import DevTables from "./pages/DevTables";
 import DevUsers from "./pages/DevUsers";
 import DevDatabase from "./pages/DevDatabase";
+import DevExplorer from "./pages/DevExplorer";
 import Dashboard from "./pages/Dashboard";
 import PatioKanban from "./pages/PatioKanban";
 import ProtectedRoute from "./components/ProtectedRoute";
@@ -37,6 +38,13 @@ import AdminTrelloMigracao from "./pages/admin/AdminTrelloMigracao";
 import DevIAPortal from "./pages/dev/DevIAPortal";
 import DevPerfilIA from "./pages/dev/DevPerfilIA";
 import GestaoFornecedores from "./pages/gestao/GestaoFornecedores";
+import GestaoDashboards from "./pages/gestao/GestaoDashboards";
+import GestaoRH from "./pages/gestao/GestaoRH";
+import GestaoOperacoes from "./pages/gestao/GestaoOperacoes";
+import GestaoFinanceiro from "./pages/gestao/GestaoFinanceiro";
+import GestaoComercial from "./pages/gestao/GestaoComercial";
+import GestaoTecnologia from "./pages/gestao/GestaoTecnologia";
+import GestaoVeiculosOrfaos from "./pages/gestao/GestaoVeiculosOrfaos";
 import AnalyticsFunil from "./pages/analytics/AnalyticsFunil";
 
 // NOVAS PÁGINAS DEV
@@ -409,12 +417,42 @@ export const router = createBrowserRouter([
   {
     path: "/gestao/fornecedores",
     Component: ProtectedRoute,
-    children: [
-      {
-        index: true,
-        Component: GestaoFornecedores,
-      },
-    ],
+    children: [{ index: true, Component: GestaoFornecedores }],
+  },
+  {
+    path: "/gestao",
+    Component: ProtectedRoute,
+    children: [{ index: true, Component: GestaoDashboards }],
+  },
+  {
+    path: "/gestao/rh",
+    Component: ProtectedRoute,
+    children: [{ index: true, Component: GestaoRH }],
+  },
+  {
+    path: "/gestao/operacoes",
+    Component: ProtectedRoute,
+    children: [{ index: true, Component: GestaoOperacoes }],
+  },
+  {
+    path: "/gestao/financeiro",
+    Component: ProtectedRoute,
+    children: [{ index: true, Component: GestaoFinanceiro }],
+  },
+  {
+    path: "/gestao/comercial",
+    Component: ProtectedRoute,
+    children: [{ index: true, Component: GestaoComercial }],
+  },
+  {
+    path: "/gestao/tecnologia",
+    Component: ProtectedRoute,
+    children: [{ index: true, Component: GestaoTecnologia }],
+  },
+  {
+    path: "/gestao/veiculos-orfaos",
+    Component: ProtectedRoute,
+    children: [{ index: true, Component: GestaoVeiculosOrfaos }],
   },
   {
     path: "/analytics/funil",
