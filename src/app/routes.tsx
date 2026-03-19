@@ -55,6 +55,7 @@ import DevAPI from "./pages/dev/DevAPI";
 import DevPermissoes from "./pages/dev/DevPermissoes";
 import DevProcessos from "./pages/dev/DevProcessos";
 import DevFerramentas from "./pages/dev/DevFerramentas";
+import DevSQL from "./pages/dev/DevSQL";
 
 // NOVAS PÁGINAS - GESTÃO AVANÇADA
 import AdminEstoque from "./pages/admin/AdminEstoque";
@@ -251,6 +252,26 @@ export const router = createBrowserRouter([
       {
         index: true,
         Component: AdminConfiguracoes,
+      },
+    ],
+  },
+  {
+    path: "/overview",
+    Component: ProtectedRoute,
+    children: [
+      {
+        index: true,
+        Component: VisaoGeral,
+      },
+    ],
+  },
+  {
+    path: "/outros_relatorios",
+    Component: ProtectedRoute,
+    children: [
+      {
+        index: true,
+        Component: AdminRelatorios,
       },
     ],
   },
@@ -725,6 +746,26 @@ export const router = createBrowserRouter([
       {
         index: true,
         Component: DevFerramentas,
+      },
+    ],
+  },
+  {
+    path: "/dev-ferramentas",
+    Component: ProtectedRoute,
+    children: [
+      {
+        index: true,
+        Component: DevFerramentas,
+      },
+    ],
+  },
+  {
+    path: "/dev-sql",
+    Component: ProtectedRoute,
+    children: [
+      {
+        index: true,
+        Component: DevSQL,
       },
     ],
   },

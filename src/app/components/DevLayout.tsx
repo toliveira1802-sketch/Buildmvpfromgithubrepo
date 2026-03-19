@@ -21,7 +21,8 @@ import {
   Car,
   UserCircle,
   Key,
-  FileStack
+  FileStack,
+  Terminal
 } from "lucide-react";
 import { Button } from "./ui/button";
 import { cn } from "./ui/utils";
@@ -81,6 +82,7 @@ export default function DevLayout({ children }: DevLayoutProps) {
         { path: "/dev-tables", label: "Tables", icon: Table },
         { path: "/dev-users", label: "Users", icon: Users },
         { path: "/dev-database", label: "Database", icon: Database },
+        { path: "/dev-sql", label: "SQL Agent", icon: Terminal },
       ]
     },
     {
