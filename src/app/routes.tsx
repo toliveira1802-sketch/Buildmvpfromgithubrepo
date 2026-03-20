@@ -56,6 +56,11 @@ import DevPermissoes from "./pages/dev/DevPermissoes";
 import DevProcessos from "./pages/dev/DevProcessos";
 import DevFerramentas from "./pages/dev/DevFerramentas";
 import DevSQL from "./pages/dev/DevSQL";
+import DevDashboardIA from "./pages/dev/DevDashboardIA";
+import DevOutrasHub from "./pages/dev/DevOutrasHub";
+import DevExplorer from "./pages/DevExplorer";
+import DevDashboardIA from "./pages/dev/DevDashboardIA";
+import DevOutrasHub from "./pages/dev/DevOutrasHub";
 
 // NOVAS PÁGINAS - GESTÃO AVANÇADA
 import AdminEstoque from "./pages/admin/AdminEstoque";
@@ -760,14 +765,34 @@ export const router = createBrowserRouter([
     ],
   },
   {
+    path: "/dev-explorer",
+    Component: ProtectedRoute,
+    children: [{ index: true, Component: DevExplorer }],
+  },
+  {
+    path: "/dev-dashboard-ia",
+    Component: ProtectedRoute,
+    children: [{ index: true, Component: DevDashboardIA }],
+  },
+  {
+    path: "/dev-outras-hub",
+    Component: ProtectedRoute,
+    children: [{ index: true, Component: DevOutrasHub }],
+  },
+  {
     path: "/dev-sql",
     Component: ProtectedRoute,
-    children: [
-      {
-        index: true,
-        Component: DevSQL,
-      },
-    ],
+    children: [{ index: true, Component: DevSQL }],
+  },
+  {
+    path: "/dev-dashboard-ia",
+    Component: ProtectedRoute,
+    children: [{ index: true, Component: DevDashboardIA }],
+  },
+  {
+    path: "/dev-outras-hub",
+    Component: ProtectedRoute,
+    children: [{ index: true, Component: DevOutrasHub }],
   },
   {
     path: "*",
