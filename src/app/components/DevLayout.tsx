@@ -5,7 +5,7 @@ import {
   Brain, Sparkles, Cpu, Wrench, Car, FileStack, Terminal,
   LayoutDashboard, ChevronDown, ChevronRight, UserCircle2, Bot,
   GitMerge, Plug, Calculator, GraduationCap, MoreHorizontal,
-  TrendingUp, CheckCircle, Megaphone, Building2, Cog,
+  TrendingUp, CheckCircle, Building2, Cog,
   Network, BarChart3, Shield, Layers, Code2,
   Zap, Store
 } from "lucide-react";
@@ -67,7 +67,7 @@ const NAV: Section[] = [
         { path: "/gestao/metas",      label: "Metas",       icon: TrendingUp },
         { path: "/gestao/rh",         label: "RH",          icon: Building2 },
         { path: "/dev-configuracoes", label: "Migrações",   icon: GitMerge },
-        { path: "/admin/integracoes", label: "Integrações", icon: Plug },
+        { path: "/dev-integracoes",  label: "Integrações", icon: Plug },
       ]},
       { label: "Processos", items: [
         { path: "/dev-processos",   label: "Sistema",   icon: Network },
@@ -92,7 +92,6 @@ const OTHER_SIDEBARS = [
   { path: "/dashboard",          label: "CONSULTOR", icon: Users,     color: "text-blue-400 hover:bg-blue-950/30" },
   { path: "/patio",              label: "MECÂNICO",  icon: Wrench,    color: "text-orange-400 hover:bg-orange-950/30" },
   { path: "/",                   label: "CLIENTE",   icon: Store,     color: "text-green-400 hover:bg-green-950/30" },
-  { path: "/",                   label: "MARKETING", icon: Megaphone, color: "text-pink-400 hover:bg-pink-950/30" },
 ];
 
 export default function DevLayout({ children }: DevLayoutProps) {

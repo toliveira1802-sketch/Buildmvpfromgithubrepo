@@ -780,6 +780,11 @@ export const router = createBrowserRouter([
     children: [{ index: true, Component: DevOutrasHub }],
   },
   {
+    path: "/dev-integracoes",
+    Component: ProtectedRoute,
+    children: [{ index: true, Component: AdminIntegracoes }],
+  },
+  {
     path: "/dev-sql",
     Component: ProtectedRoute,
     children: [{ index: true, Component: DevSQL }],
