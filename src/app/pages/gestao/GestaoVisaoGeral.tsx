@@ -5,6 +5,7 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContaine
 import { Button } from "../../components/ui/button";
 import AdminLayout from "../../components/AdminLayout";
 import { createClient } from "@supabase/supabase-js";
+import EmpresaToggle from "../../components/EmpresaToggle";
 
 const sb = createClient(
   "https://acuufrgoyjwzlyhopaus.supabase.co",
@@ -57,7 +58,10 @@ export default function GestaoVisaoGeral() {
         <div className="flex items-center justify-between">
           <div><h1 className="text-3xl font-bold text-white flex items-center gap-2"><TrendingUp className="h-8 w-8 text-blue-400"/>Visão Geral</h1>
             <p className="text-zinc-400 mt-1">KPIs consolidados — Doctor Auto Prime</p></div>
-          <Button onClick={load} variant="outline" className="border-zinc-700 text-zinc-300"><RefreshCw className={"h-4 w-4"+(loading?" animate-spin":"")}/></Button>
+          <div className="flex items-center gap-3">
+            <EmpresaToggle />
+            <Button onClick={load} variant="outline" className="border-zinc-700 text-zinc-300"><RefreshCw className={"h-4 w-4"+(loading?" animate-spin":"")}/></Button>
+          </div>
         </div>
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
           {KPIS.map((k,i)=>{ const Icon=k.icon; return (

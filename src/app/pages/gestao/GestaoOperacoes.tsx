@@ -6,6 +6,7 @@ import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, Legend } from "recha
 import AdminLayout from "../../components/AdminLayout";
 import { supabase } from "../../../lib/supabase";
 import { startOfMonth, endOfMonth } from "date-fns";
+import { EmpresaToggle } from "../../components/EmpresaToggle";
 
 const STATUS_COLORS: Record<string, string> = {
   pendente: "#f59e0b", em_execucao: "#3b82f6", concluido: "#22c55e", cancelado: "#ef4444",
@@ -46,9 +47,12 @@ export default function GestaoOperacoes() {
   return (
     <AdminLayout>
       <div className="p-6 space-y-6 max-w-4xl mx-auto">
-        <div>
-          <h1 className="text-3xl font-bold text-white flex items-center gap-2"><Wrench className="h-8 w-8 text-orange-400" /> Operações</h1>
-          <p className="text-zinc-400 mt-1">Ordens de serviço do mês atual</p>
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold text-white flex items-center gap-2"><Wrench className="h-8 w-8 text-orange-400" /> Operações</h1>
+            <p className="text-zinc-400 mt-1">Ordens de serviço do mês atual</p>
+          </div>
+          <EmpresaToggle />
         </div>
 
         {alertas.length > 0 && (

@@ -5,6 +5,7 @@ import { Button } from "../../components/ui/button";
 import { Badge } from "../../components/ui/badge";
 import AdminLayout from "../../components/AdminLayout";
 import { supabase } from "../../../lib/supabase";
+import { EmpresaToggle } from "../../components/EmpresaToggle";
 
 interface Cliente { id: number; full_name?: string; email?: string; phone?: string; created_at: string; }
 
@@ -52,11 +53,14 @@ export default function GestaoComercial() {
             </h1>
             <p className="text-zinc-400 mt-1">Clientes, promoções e aprovações</p>
           </div>
-          {pendentes.length > 0 && (
-            <Badge className="bg-red-600 text-white text-sm px-3 py-1 flex items-center gap-1">
-              <Bell className="h-3 w-3" /> {pendentes.length} pendentes
-            </Badge>
-          )}
+          <div className="flex items-center gap-3">
+            <EmpresaToggle />
+            {pendentes.length > 0 && (
+              <Badge className="bg-red-600 text-white text-sm px-3 py-1 flex items-center gap-1">
+                <Bell className="h-3 w-3" /> {pendentes.length} pendentes
+              </Badge>
+            )}
+          </div>
         </div>
 
         <div className="flex gap-2">

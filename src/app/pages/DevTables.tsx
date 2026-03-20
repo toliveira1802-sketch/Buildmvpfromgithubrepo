@@ -13,7 +13,7 @@ const supabaseAdmin = createClient(
   { auth: { autoRefreshToken: false, persistSession: false } }
 );
 
-const CORE = ["00_companies","10_users","02_dev_roles","03_CRM","04_CLIENTS","05_VEHICLES","06_OS","07_OS_ITENS","08_OS_HISTORICO","11_USER_CLIENTS","12_MECANICOS"];
+const CORE = ["00_companies","01_colaboradores","02_dev_roles","03_CRM","04_CLIENTS","05_VEHICLES","06_OS","07_OS_ITENS","08_OS_HISTORICO","11_USER_CLIENTS","12_MECANICOS","13_PENDENCIAS"];
 const LEGACY = ["98_CLIENTS_LEGADO_OFIINT"];
 const PAGE_SIZE = 50;
 

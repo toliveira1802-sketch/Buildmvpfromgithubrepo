@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dev Navigator</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            background: #0a0e27;
+            color: #e0e0e0;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+            padding: 40px 20px;
+        }
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+        .header {
+            margin-bottom: 40px;
+        }
+        .header h1 {
+            font-size: 32px;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+        .header p {
+            color: #888;
+            font-size: 14px;
+        }
+        .tabs {
+            display: flex;
+            gap: 16px;
+            margin-bottom: 24px;
+            border-bottom: 1px solid #2d3548;
+            padding-bottom: 16px;
+            overflow-x: auto;
+        }
+        .tab {
+            padding: 8px 12px;
+            border-bottom: 2px solid transparent;
+            cursor: pointer;
+            font-size: 14px;
+            color: #888;
+            transition: all 0.3s ease;
+            white-space: nowrap;
+        }
+        .tab.active {
+            color: #4ade80;
+            border-bottom-color: #4ade80;
+        }
+        .tab:hover {
+            color: #e0e0e0;
+        }
+        .section {
+            margin-bottom: 32px;
+        }
+        .section-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: #4ade80;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .items-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 12px;
+        }
+        .item {
+            background: #161b32;
+            border: 1px solid #2d3548;
+            border-radius: 8px;
+            padding: 16px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+        }
+        .item:hover {
+            background: #1a1f35;
+            border-color: #4d5568;
+            transform: translateX(4px);
+        }
+        .item-icon {
+            font-size: 20px;
+            margin-top: 2px;
+            min-width: 24px;
+            text-align: center;
+        }
+        .item-content {
+            flex: 1;
+        }
+        .item-name {
+            font-weight: 600;
+            margin-bottom: 4px;
+            font-size: 15px;
+        }
+        .item-description {
+            font-size: 13px;
+            color: #888;
+            line-height: 1.4;
+        }
+        .item-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            background: #1f2937;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            color: #4ade80;
+            margin-top: 8px;
+            width: fit-content;
+        }
+        .badge-status {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 600;
+            margin-left: auto;
+        }
+        .badge-online {
+            background: rgba(74, 222, 128, 0.1);
+            color: #4ade80;
+        }
+        .badge-maintenance {
+            background: rgba(250, 204, 21, 0.1);
+            color: #facc15;
+        }
+        .badge-offline {
+            background: rgba(248, 113, 113, 0.1);
+            color: #f87171;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h1>Dev Navigator</h1>
+            <p>Guia de ferramentas e recursos para o time de desenvolvimento</p>
+        </div>
+
+        <!-- Tabs -->
+        <div class="tabs">
+            <div class="tab active">📋 Geral</div>
+            <div class="tab">🎯 Gerência & Docs</div>
+            <div class="tab">🔧 DevOps & Deploy</div>
+            <div class="tab">📊 Dados</div>
+            <div class="tab">👥 RH & Pessoas</div>
+        </div>
+
+        <!-- General Section -->
+        <div class="section">
+            <div class="section-title">📋 Gerenciamento de Projetos</div>
+            <div class="items-grid">
+                <div class="item">
+                    <div class="item-icon">📊</div>
+                    <div class="item-content">
+                        <div class="item-name">Dashboard Admin</div>
+                        <div class="item-description">Administração geral de painéis, relatórios e customização de dashboards</div>
+                    </div>
+                    <div class="badge-status badge-online">✓ Online</div>
+                </div>
+
+                <div class="item">
+                    <div class="item-icon">📈</div>
+                    <div class="item-content">
+                        <div class="item-name">Raio Radar</div>
+                        <div class="item-description">Rastreamento de padrões, análise de dados e relatórios em tempo real</div>
+                    </div>
+                    <div class="badge-status badge-online">✓ Online</div>
+                </div>
+
+                <div class="item">
+                    <div class="item-icon">📋</div>
+                    <div class="item-content">
+                        <div class="item-name">Ordem de Serviços</div>
+                        <div class="item-description">Gerenciamento de ordens de serviço, escalonamento e atribuição de tarefas</div>
+                    </div>
+                    <div class="badge-status badge-online">✓ Online</div>
+                </div>
+
+                <div class="item">
+                    <div class="item-icon">📰</div>
+                    <div class="item-content">
+                        <div class="item-name">News QA</div>
+                        <div class="item-description">Comunicados internos, notícias da equipe, updates e anúncios</div>
+                    </div>
+                    <div class="badge-status badge-online">✓ Online</div>
+                </div>
+
+                <div class="item">
+                    <div class="item-icon">✅</div>
+                    <div class="item-content">
+                        <div class="item-name">Décidão QA</div>
+                        <div class="item-description">Decisões de qualidade, aprovações de teste, tickets de validação</div>
+                    </div>
+                    <div class="badge-status badge-online">✓ Online</div>
+                </div>
+
+                <div class="item">
+                    <div class="item-icon">📅</div>
+                    <div class="item-content">
+                        <div class="item-name">Agendas</div>
+                        <div class="item-description">Calendários compartilhados, agendamento de reuniões e eventos</div>
+                    </div>
+                    <div class="badge-status badge-online">✓ Online</div>
+                </div>
+
+                <div class="item">
+                    <div class="item-icon">💬</div>
+                    <div class="item-content">
+                        <div class="item-name">Chanelo</div>
+                        <div class="item-description">Chat e integração com ferramentas de comunicação, discursos em DCI</div>
+                    </div>
+                    <div class="badge-status badge-online">✓ Online</div>
+                </div>
+
+                <div class="item">
+                    <div class="item-icon">🔗</div>
+                    <div class="item-content">
+                        <div class="item-name">Decisão Chanelo</div>
+                        <div class="item-description">Arquivo estruturado de decisões, histórico de discussões e contexto de decisões</div>
+                    </div>
+                    <div class="badge-status badge-online">✓ Online</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Documentation Section -->
+        <div class="section">
+            <div class="section-title">📚 Documentação & Recursos</div>
+            <div class="items-grid">
+                <div class="item">
+                    <div class="item-icon">📖</div>
+                    <div class="item-content">
+                        <div class="item-name">Apresentação</div>
+                        <div class="item-description">Material de apresentação, slides e recursos visuais de treinamento</div>
+                    </div>
+                    <div class="badge-status badge-online">✓ Online</div>
+                </div>
+
+                <div class="item">
+                    <div class="item-icon">⚙️</div>
+                    <div class="item-content">
+                        <div class="item-name">Guias de Operação</div>
+                        <div class="item-description">Documentação técnica, guias de uso e procedimentos operacionais</div>
+                    </div>
+                    <div class="badge-status badge-online">✓ Online</div>
+                </div>
+
+                <div class="item">
+                    <div class="item-icon">🔐</div>
+                    <div class="item-content">
+                        <div class="item-name">Gestão de Acessos</div>
+                        <div class="item-description">Controle de permissões, credenciais, VPN e acesso a sistemas</div>
+                    </div>
+                    <div class="badge-status badge-online">✓ Online</div>
+                </div>
+
+                <div class="item">
+                    <div class="item-icon">📝</div>
+                    <div class="item-content">
+                        <div class="item-name">Configurações</div>
+                        <div class="item-description">Configurações de ambiente, variáveis, setups e personalizações</div>
+                    </div>
+                    <div class="badge-status badge-online">✓ Online</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- DevOps Section -->
+        <div class="section">
+            <div class="section-title">⚡ Operações & Deploy</div>
+            <div class="items-grid">
+                <div class="item">
+                    <div class="item-icon">🚀</div>
+                    <div class="item-content">
+                        <div class="item-name">Visão Geral</div>
+                        <div class="item-description">Status geral do sistema, health checks e monitoramento de infraestrutura</div>
+                    </div>
+                    <div class="badge-status badge-online">✓ Online</div>
+                </div>
+
+                <div class="item">
+                    <div class="item-icon">📊</div>
+                    <div class="item-content">
+                        <div class="item-name">Otimizações</div>
+                        <div class="item-description">Performance tuning, otimização de queries e benchmark de sistemas</div>
+                    </div>
+                    <div class="badge-status badge-online">✓ Online</div>
+                </div>
+
+                <div class="item">
+                    <div class="item-icon">📈</div>
+                    <div class="item-content">
+                        <div class="item-name">Relatórios</div>
+                        <div class="item-description">Relatórios analíticos, métricas e análises históricas de performance</div>
+                    </div>
+                    <div class="badge-status badge-online">✓ Online</div>
+                </div>
+
+                <div class="item">
+                    <div class="item-icon">🧑‍💼</div>
+                    <div class="item-content">
+                        <div class="item-name">Probabilidade</div>
+                        <div class="item-description">Estimativas de risco, SLA tracking e previsões de disponibilidade</div>
+                    </div>
+                    <div class="badge-status badge-online">✓ Online</div>
+                </div>
+
+                <div class="item">
+                    <div class="item-icon">🤝</div>
+                    <div class="item-content">
+                        <div class="item-name">Colaboradores</div>
+                        <div class="item-description">Gestão de times, responsabilidades compartilhadas e colaboração</div>
+                    </div>
+                    <div class="badge-status badge-online">✓ Online</div>
+                </div>
+
+                <div class="item">
+                    <div class="item-icon">⚙️</div>
+                    <div class="item-content">
+                        <div class="item-name">Modificações</div>
+                        <div class="item-description">Change log, histórico de modificações, rollbacks e versioning</div>
+                    </div>
+                    <div class="badge-status badge-online">✓ Online</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Data Section -->
+        <div class="section">
+            <div class="section-title">📊 Dados & Database</div>
+            <div class="items-grid">
+                <div class="item">
+                    <div class="item-icon">🤖</div>
+                    <div class="item-content">
+                        <div class="item-name">Agente de SQL</div>
+                        <div class="item-description">Agente inteligente para consultas, gerenciamento de banco de dados e otimização de queries</div>
+                    </div>
+                    <div class="badge-status badge-online">● Online</div>
+                </div>
+
+                <div class="item">
+                    <div class="item-icon">🗄️</div>
+                    <div class="item-content">
+                        <div class="item-name">Database Manager</div>
+                        <div class="item-description">Gerenciamento centralizado de bases de dados, backups e replicação</div>
+                    </div>
+                    <div class="badge-status badge-online">● Online</div>
+                </div>
+
+                <div class="item">
+                    <div class="item-icon">📈</div>
+                    <div class="item-content">
+                        <div class="item-name">Analytics & Insights</div>
+                        <div class="item-description">Análise de dados, relatórios avançados e business intelligence</div>
+                    </div>
+                    <div class="badge-status badge-online">● Online</div>
+                </div>
+
+                <div class="item">
+                    <div class="item-icon">⚡</div>
+                    <div class="item-content">
+                        <div class="item-name">Performance Monitor</div>
+                        <div class="item-description">Monitoramento de performance de database, índices e query execution plans</div>
+                    </div>
+                    <div class="badge-status badge-online">● Online</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- HR Section -->
+        <div class="section">
+            <div class="section-title">👥 Gestão de Pessoas</div>
+            <div class="items-grid">
+                <div class="item">
+                    <div class="item-icon">🎯</div>
+                    <div class="item-content">
+                        <div class="item-name">Visão Geral</div>
+                        <div class="item-description">Dashboard RH, overview de pessoas, metas e indicadores</div>
+                    </div>
+                    <div class="badge-status badge-online">✓ Online</div>
+                </div>
+
+                <div class="item">
+                    <div class="item-icon">📊</div>
+                    <div class="item-content">
+                        <div class="item-name">Otimização</div>
+                        <div class="item-description">Alocação de recursos, distribuição de workload e planejamento de capacidade</div>
+                    </div>
+                    <div class="badge-status badge-online">✓ Online</div>
+                </div>
+
+                <div class="item">
+                    <div class="item-icon">📈</div>
+                    <div class="item-content">
+                        <div class="item-name">Relatórios</div>
+                        <div class="item-description">Análises de desempenho, métricas de produtividade e trends de pessoal</div>
+                    </div>
+                    <div class="badge-status badge-online">✓ Online</div>
+                </div>
+
+                <div class="item">
+                    <div class="item-icon">🔍</div>
+                    <div class="item-content">
+                        <div class="item-name">Produtividade</div>
+                        <div class="item-description">Indicadores de produtividade, utilização de tempo e eficiência das equipes</div>
+                    </div>
+                    <div class="badge-status badge-online">✓ Online</div>
+                </div>
+
+                <div class="item">
+                    <div class="item-icon">🎓</div>
+                    <div class="item-content">
+                        <div class="item-name">Desenvolvimento</div>
+                        <div class="item-description">Programas de treinamento, desenvolvimento profissional e upskilling</div>
+                    </div>
+                    <div class="badge-status badge-online">✓ Online</div>
+                </div>
+
+                <div class="item">
+                    <div class="item-icon">🏆</div>
+                    <div class="item-content">
+                        <div class="item-name">Reconhecimento</div>
+                        <div class="item-description">Programas de reconhecimento, prêmios e incentivos de equipe</div>
+                    </div>
+                    <div class="badge-status badge-online">✓ Online</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

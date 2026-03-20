@@ -94,8 +94,8 @@ export default function AdminNovaOS() {
   };
 
   const salvarNovoCliente = async () => {
-    if (!novoCliente.full_name || (!novoCliente.phone && !novoCliente.email)) {
-      toast.error("Nome + telefone ou e-mail obrigatórios"); return;
+    if (!novoCliente.full_name || !novoCliente.phone) {
+      toast.error("Nome e telefone são obrigatórios"); return;
     }
     setSavingCliente(true);
     try {
@@ -264,7 +264,7 @@ export default function AdminNovaOS() {
                 {showNovoCliente && (
                   <div className="space-y-3">
                     <div className="flex items-center justify-between mb-1">
-                      <p className="text-xs text-yellow-400 flex items-center gap-1"><AlertCircle className="size-3" /> Campos marcados com * são obrigatórios para o CRM</p>
+                      <p className="text-xs text-yellow-400 flex items-center gap-1"><AlertCircle className="size-3" /> Campos marcados com * são obrigatórios. E-mail é opcional mas contabilizado nas métricas do CRM</p>
                       <button onClick={() => setShowNovoCliente(false)} className="text-zinc-500 hover:text-white"><X className="size-4" /></button>
                     </div>
                     <div>
@@ -276,7 +276,7 @@ export default function AdminNovaOS() {
                       <div><Label className="text-zinc-300 text-sm">CPF *</Label><Input value={novoCliente.cpf} onChange={e => setNovoCliente(p => ({...p, cpf: e.target.value}))} placeholder="000.000.000-00" className="bg-zinc-800 border-zinc-700 text-white mt-1" /></div>
                     </div>
                     <div className="grid grid-cols-2 gap-3">
-                      <div><Label className="text-zinc-300 text-sm">E-mail *</Label><Input value={novoCliente.email} onChange={e => setNovoCliente(p => ({...p, email: e.target.value}))} placeholder="email@exemplo.com" className="bg-zinc-800 border-zinc-700 text-white mt-1" /></div>
+                      <div><Label className="text-zinc-300 text-sm">E-mail</Label><Input value={novoCliente.email} onChange={e => setNovoCliente(p => ({...p, email: e.target.value}))} placeholder="email@exemplo.com" className="bg-zinc-800 border-zinc-700 text-white mt-1" /></div>
                       <div><Label className="text-zinc-300 text-sm">Data de Nascimento</Label><Input type="date" value={novoCliente.birthday} onChange={e => setNovoCliente(p => ({...p, birthday: e.target.value}))} className="bg-zinc-800 border-zinc-700 text-white mt-1" /></div>
                     </div>
                     <div><Label className="text-zinc-300 text-sm">Endereço</Label><Input value={novoCliente.address} onChange={e => setNovoCliente(p => ({...p, address: e.target.value}))} placeholder="Rua, número, bairro" className="bg-zinc-800 border-zinc-700 text-white mt-1" /></div>

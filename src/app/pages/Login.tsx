@@ -9,6 +9,7 @@ import { ArrowLeft, UserCircle2, Users, Wrench, User, Lock, Terminal, Loader2 } 
 import { toast } from "sonner";
 import Logo from "../components/Logo";
 import { supabase } from "../../lib/supabase";
+import { setupUserContext } from "../../lib/supabase-extended";
 
 const ROLES = [
   { id: "Gestao",    label: "GESTÃO",    icon: UserCircle2, color: "from-purple-500 to-pink-500", desc: "Administração e relatórios", route: "/gestao/visao-geral", nivel: 2 },
@@ -67,6 +68,10 @@ export default function Login() {
       };
       const storage = rememberMe ? localStorage : sessionStorage;
       storage.setItem("dap-user", JSON.stringify(session));
+
+      // Setup oficina context (multi-tenant segmentation)
+      const userRole = selectedRole.toLowerCase() as 'colaborador' | 'mecanico' | 'admin';
+      await setupUserContext(user.id, userRole);
 
       toast.success(`Bem-vindo(a), ${user.nome}!`);
       navigate(roleData?.route || "/dashboard", { replace: true });

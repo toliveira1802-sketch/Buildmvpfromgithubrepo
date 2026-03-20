@@ -5,6 +5,7 @@ import {
 } from "lucide-react";
 import AdminLayout from "../../components/AdminLayout";
 import { supabase } from "../../../lib/supabase";
+import { EmpresaToggle } from "../../components/EmpresaToggle";
 
 const MODULOS = [
   { path: "/gestao/rh",         label: "Recursos Humanos", icon: Users,       color: "from-blue-900 to-blue-800",   border: "border-blue-700",   desc: "Mecânicos, performance e feedbacks" },
@@ -30,9 +31,12 @@ export default function GestaoDashboards() {
   return (
     <AdminLayout>
       <div className="p-6 max-w-5xl mx-auto">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-white">Gestão</h1>
-          <p className="text-zinc-400 mt-1">Selecione o módulo que deseja acessar</p>
+        <div className="flex items-center justify-between mb-8">
+          <div>
+            <h1 className="text-3xl font-bold text-white">Gestão</h1>
+            <p className="text-zinc-400 mt-1">Selecione o módulo que deseja acessar</p>
+          </div>
+          <EmpresaToggle />
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {MODULOS.map((mod) => {

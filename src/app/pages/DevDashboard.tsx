@@ -20,6 +20,7 @@ import DevLayout from "../components/DevLayout";
 import { aiAPI } from "../services/api";
 import { useAPI } from "../hooks/useAPI";
 import { toast } from "sonner";
+import EmpresaToggle from "../components/EmpresaToggle";
 
 interface AIService {
   name: string;
@@ -135,6 +136,11 @@ export default function DevDashboard() {
   return (
     <DevLayout>
       <div className="container mx-auto p-6 space-y-6">
+        {/* Empresa Toggle - for testing multi-tenant */}
+        <div className="flex justify-end">
+          <EmpresaToggle />
+        </div>
+
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>

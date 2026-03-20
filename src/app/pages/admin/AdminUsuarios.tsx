@@ -24,7 +24,7 @@ export default function AdminUsuarios() {
 
   async function load() {
     setLoading(true);
-    const { data } = await sb.from("10_users")
+    const { data } = await sb.from("01_colaboradores")
       .select("id,nome,username,cargo,nivelAcessoId,ativo,primeiroAcesso,createdAt,auth_user_id")
       .order("createdAt", { ascending: false });
     setUsers(data || []);
@@ -32,7 +32,7 @@ export default function AdminUsuarios() {
   }
 
   async function toggleAtivo(u: any) {
-    await sb.from("10_users").update({ ativo: !u.ativo }).eq("id", u.id);
+    await sb.from("01_colaboradores").update({ ativo: !u.ativo }).eq("id", u.id);
     load();
   }
 

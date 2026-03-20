@@ -6,6 +6,7 @@ import { Card, CardHeader, CardTitle, CardContent } from "../../components/ui/ca
 import { useNavigate } from "react-router";
 import AdminLayout from "../../components/AdminLayout";
 import { createClient } from "@supabase/supabase-js";
+import { EmpresaToggle } from "../../components/EmpresaToggle";
 const sb = createClient("https://acuufrgoyjwzlyhopaus.supabase.co","eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFjdXVmcmdveWp3emx5aG9wYXVzIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2ODI2Mjk4OCwiZXhwIjoyMDgzODM4OTg4fQ.mCMQoBXRwSNrd1VgEa1uHCJwP3mcto5xjlt3LF6VUO4");
 
 export default function GestaoMelhorias() {
@@ -48,7 +49,10 @@ export default function GestaoMelhorias() {
         <div className="flex items-center justify-between">
           <div><h1 className="text-3xl font-bold text-white flex items-center gap-2"><Lightbulb className="h-8 w-8 text-yellow-400"/>Melhorias</h1>
             <p className="text-zinc-400 mt-1">Insights automáticos baseados nos dados do sistema</p></div>
-          <Button onClick={load} variant="outline" className="border-zinc-700 text-zinc-300"><RefreshCw className={"h-4 w-4"+(loading?" animate-spin":"")}/></Button>
+          <div className="flex items-center gap-3">
+            <EmpresaToggle />
+            <Button onClick={load} variant="outline" className="border-zinc-700 text-zinc-300"><RefreshCw className={"h-4 w-4"+(loading?" animate-spin":"")}/></Button>
+          </div>
         </div>
 
         <Card className="bg-zinc-900 border-zinc-800">

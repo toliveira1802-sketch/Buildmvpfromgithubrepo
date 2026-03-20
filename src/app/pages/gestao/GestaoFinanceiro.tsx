@@ -5,6 +5,7 @@ import { Progress } from "../../components/ui/progress";
 import AdminLayout from "../../components/AdminLayout";
 import { supabase } from "../../../lib/supabase";
 import { startOfMonth, endOfMonth } from "date-fns";
+import { EmpresaToggle } from "../../components/EmpresaToggle";
 
 export default function GestaoFinanceiro() {
   const [data, setData] = useState({ faturamento: 0, ticket: 0, servicos: 0, presosPatrio: 0, atrasados: 0 });
@@ -44,9 +45,12 @@ export default function GestaoFinanceiro() {
   return (
     <AdminLayout>
       <div className="p-6 space-y-6 max-w-4xl mx-auto">
-        <div>
-          <h1 className="text-3xl font-bold text-white flex items-center gap-2"><DollarSign className="h-8 w-8 text-green-400" /> Financeiro</h1>
-          <p className="text-zinc-400 mt-1">Faturamento e métricas do mês atual</p>
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold text-white flex items-center gap-2"><DollarSign className="h-8 w-8 text-green-400" /> Financeiro</h1>
+            <p className="text-zinc-400 mt-1">Faturamento e métricas do mês atual</p>
+          </div>
+          <EmpresaToggle />
         </div>
 
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">

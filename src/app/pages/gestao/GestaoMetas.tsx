@@ -5,6 +5,7 @@ import { Card, CardHeader, CardTitle, CardContent } from "../../components/ui/ca
 import { Progress } from "../../components/ui/progress";
 import AdminLayout from "../../components/AdminLayout";
 import { createClient } from "@supabase/supabase-js";
+import { EmpresaToggle } from "../../components/EmpresaToggle";
 const sb = createClient("https://acuufrgoyjwzlyhopaus.supabase.co","eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFjdXVmcmdveWp3emx5aG9wYXVzIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2ODI2Mjk4OCwiZXhwIjoyMDgzODM4OTg4fQ.mCMQoBXRwSNrd1VgEa1uHCJwP3mcto5xjlt3LF6VUO4");
 
 const METAS = [
@@ -43,7 +44,10 @@ export default function GestaoMetas() {
         <div className="flex items-center justify-between">
           <div><h1 className="text-3xl font-bold text-white flex items-center gap-2"><Target className="h-8 w-8 text-blue-400"/>Metas</h1>
             <p className="text-zinc-400 mt-1">Progresso das metas do mês atual</p></div>
-          <Button onClick={load} variant="outline" className="border-zinc-700 text-zinc-300"><RefreshCw className={"h-4 w-4"+(loading?" animate-spin":"")}/></Button>
+          <div className="flex items-center gap-3">
+            <EmpresaToggle />
+            <Button onClick={load} variant="outline" className="border-zinc-700 text-zinc-300"><RefreshCw className={"h-4 w-4"+(loading?" animate-spin":"")}/></Button>
+          </div>
         </div>
         <div className="space-y-4">
           {METAS.map(m => {

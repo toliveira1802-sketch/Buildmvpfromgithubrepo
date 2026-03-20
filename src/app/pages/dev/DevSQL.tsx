@@ -14,7 +14,7 @@ const supabaseAdmin = createClient(
 const CORE_TABLES = [
   "00_companies","01_colaboradores","02_dev_roles","03_CRM",
   "04_CLIENTS","05_VEHICLES","06_OS","07_OS_ITENS",
-  "08_OS_HISTORICO","09_OS_WORKFLOW","10_users",
+  "08_OS_HISTORICO","09_OS_WORKFLOW","10_users","01_colaboradores","13_PENDENCIAS",
   "11_USER_CLIENTS","12_MECANICOS","98_CLIENTS_LEGADO_OFIINT"
 ];
 

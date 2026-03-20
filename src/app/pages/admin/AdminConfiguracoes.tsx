@@ -17,7 +17,7 @@ export default function AdminConfiguracoes() {
     setLoading(true);
     const [emp, users, cli, veic, os, mecs] = await Promise.all([
       sb.from("00_companies").select("*").limit(1).single(),
-      sb.from("10_users").select("id",{count:"exact",head:true}),
+      sb.from("01_colaboradores").select("id",{count:"exact",head:true}),
       sb.from("04_CLIENTS").select("id",{count:"exact",head:true}),
       sb.from("05_VEHICLES").select("id",{count:"exact",head:true}),
       sb.from("06_OS").select("id",{count:"exact",head:true}),
