@@ -1,6 +1,36 @@
 import { useEffect, useState } from "react";
 import { useNavigate, Outlet, useLocation } from "react-router";
 
+interface DapUser {
+  id: number;
+  nome: string;
+  cargo: string;
+  nivelAcessoId: number;
+  role?: string;
+}
+
+/** Maps route prefixes to the minimum access levels allowed */
+const ROUTE_ACCESS: Record<string, number[]> = {
+  "/dev-":      [1],           // Dev only
+  "/executive": [1, 2, 5],    // Dev, Gestão, Gestão+ (C-Level Portal)
+  "/gestao":    [1, 2, 5],    // Dev, Gestão, Gestão+
+  "/analytics": [1, 2, 5],    // Dev, Gestão, Gestão+
+  "/mecanico":  [1, 4],       // Dev, Mecânico
+};
+
+/** Default: Admin routes accessible by Dev(1), Gestão(2), Consultor(3), Gestão+(5) */
+const DEFAULT_ALLOWED_LEVELS = [1, 2, 3, 5];
+
+function getAllowedLevels(pathname: string): number[] {
+  for (const [prefix, levels] of Object.entries(ROUTE_ACCESS)) {
+    if (pathname.startsWith(prefix)) return levels;
+  }
+  return DEFAULT_ALLOWED_LEVELS;
+}
+
+// TODO: REMOVER — Demo mode bypass para teste de UI
+const DEMO_BYPASS = true;
+
 export default function ProtectedRoute() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -8,41 +38,52 @@ export default function ProtectedRoute() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   useEffect(() => {
-    console.log('🔒 ProtectedRoute: Verificando autenticação...');
-    console.log('📍 Rota atual:', location.pathname);
-    
-    // Verifica AMBOS localStorage E sessionStorage
-    const userLocalStorage = localStorage.getItem("dap-user");
-    const userSessionStorage = sessionStorage.getItem("dap-user");
-    const user = userLocalStorage || userSessionStorage;
-    
-    const tokenLocalStorage = localStorage.getItem("dap-token");
-    const tokenSessionStorage = sessionStorage.getItem("dap-token");
-    const token = tokenLocalStorage || tokenSessionStorage;
-    
-    console.log('👤 Usuário no localStorage:', userLocalStorage ? 'SIM' : 'NÃO');
-    console.log('👤 Usuário no sessionStorage:', userSessionStorage ? 'SIM' : 'NÃO');
-    console.log('🔑 Token encontrado:', token ? 'SIM' : 'NÃO');
-    
-    if (!user) {
-      console.log('❌ Nenhum usuário encontrado! Redirecionando...');
-      
-      // Se não há usuário, redireciona para landing ou login dependendo da rota
-      if (location.pathname.startsWith("/dev-")) {
-        console.log('🔄 Redirecionando para /dev-login');
-        navigate("/dev-login", { replace: true });
-      } else {
-        console.log('🔄 Redirecionando para /');
-        navigate("/", { replace: true });
-      }
-      setIsAuthenticated(false);
-      setIsLoading(false);
-    } else {
-      console.log('✅ Usuário autenticado!');
-      console.log('📄 Dados:', JSON.parse(user));
+    if (DEMO_BYPASS) {
+      const fakeUser = { id: 0, nome: "Thales", cargo: "Gestão", nivelAcessoId: 2, role: "gestao" };
+      if (!localStorage.getItem("dap-user")) localStorage.setItem("dap-user", JSON.stringify(fakeUser));
       setIsAuthenticated(true);
       setIsLoading(false);
+      return;
     }
+
+    const raw = localStorage.getItem("dap-user") || sessionStorage.getItem("dap-user");
+
+    if (!raw && !location.pathname.startsWith("/operational")) {
+      const loginRoute = location.pathname.startsWith("/dev-") ? "/dev-login" : "/";
+      navigate(loginRoute, { replace: true });
+      setIsAuthenticated(false);
+      setIsLoading(false);
+      return;
+    }
+
+    if (!raw && location.pathname.startsWith("/operational")) {
+      setIsAuthenticated(true);
+      setIsLoading(false);
+      return;
+    }
+
+    let user: DapUser;
+    try {
+      user = JSON.parse(raw);
+    } catch {
+      localStorage.removeItem("dap-user");
+      sessionStorage.removeItem("dap-user");
+      navigate("/", { replace: true });
+      setIsAuthenticated(false);
+      setIsLoading(false);
+      return;
+    }
+
+    const allowed = getAllowedLevels(location.pathname);
+    if (!allowed.includes(user.nivelAcessoId)) {
+      navigate("/", { replace: true });
+      setIsAuthenticated(false);
+      setIsLoading(false);
+      return;
+    }
+
+    setIsAuthenticated(true);
+    setIsLoading(false);
   }, [navigate, location]);
 
   if (isLoading) {

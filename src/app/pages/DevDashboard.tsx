@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../components/ui/card";
-import { Badge } from "../components/ui/badge";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../shared/ui/card';
+import { Badge } from '../shared/ui/badge';
 import { 
   Brain,
   MessageSquare,
@@ -15,12 +15,13 @@ import {
   Database,
   RefreshCw
 } from "lucide-react";
-import { Button } from "../components/ui/button";
+import { Button } from '../shared/ui/button';
 import DevLayout from "../components/DevLayout";
-import { aiAPI } from "../services/api";
+import { aiAPI } from '../core/services/api';
 import { useAPI } from "../hooks/useAPI";
 import { toast } from "sonner";
-import EmpresaToggle from "../components/EmpresaToggle";
+import EmpresaToggle from '../shared/components/EmpresaToggle';
+import { projectId } from "/utils/supabase/info";
 
 interface AIService {
   name: string;
@@ -301,7 +302,7 @@ export default function DevDashboard() {
             </div>
             <div>
               <p className="text-zinc-500">Banco de Dados</p>
-              <p className="text-white font-semibold">Supabase (acuufrgoyjwzlyhopaus)</p>
+              <p className="text-white font-semibold">Supabase ({projectId || "N/A"})</p>
             </div>
             <div>
               <p className="text-zinc-500">Última Atualização</p>

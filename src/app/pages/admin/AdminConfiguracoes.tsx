@@ -1,10 +1,10 @@
 ﻿import { useState, useEffect } from "react";
 import { Settings, RefreshCw, Loader2, Building, Database, Users, Car, FileText, Wrench } from "lucide-react";
-import { Button } from "../../components/ui/button";
-import { Card, CardHeader, CardTitle, CardContent } from "../../components/ui/card";
+import { Button } from '../../shared/ui/button';
+import { Card, CardHeader, CardTitle, CardContent } from '../../shared/ui/card';
 import AdminLayout from "../../components/AdminLayout";
-import { createClient } from "@supabase/supabase-js";
-const sb = createClient("https://acuufrgoyjwzlyhopaus.supabase.co","eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFjdXVmcmdveWp3emx5aG9wYXVzIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2ODI2Mjk4OCwiZXhwIjoyMDgzODM4OTg4fQ.mCMQoBXRwSNrd1VgEa1uHCJwP3mcto5xjlt3LF6VUO4");
+import { supabase as sb } from "../../../lib/supabase";
+import { projectId } from "/utils/supabase/info";
 
 export default function AdminConfiguracoes() {
   const [empresa, setEmpresa] = useState<any>(null);
@@ -78,7 +78,7 @@ export default function AdminConfiguracoes() {
           <CardHeader><CardTitle className="text-white">Informações do Sistema</CardTitle></CardHeader>
           <CardContent className="space-y-3 text-sm">
             {[
-              { label:"Projeto Supabase", value:"acuufrgoyjwzlyhopaus" },
+              { label:"Projeto Supabase", value: projectId || "N/A" },
               { label:"Ambiente", value:"Produção" },
               { label:"Versão", value:"MVP v1.0" },
               { label:"Stack", value:"React 19 + Vite + TypeScript + Supabase" },

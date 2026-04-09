@@ -43,16 +43,22 @@ function generateToken(): string {
 // ==================== INICIALIZAÇÃO DO BANCO ====================
 
 // Inicializar usuários padrão (executar uma vez)
+// Senhas default definidas via env var DEFAULT_USER_PASSWORD (fallback: gera aleatória)
+function getDefaultPassword(): string {
+  return Deno.env.get("DEFAULT_USER_PASSWORD") || crypto.randomBytes(16).toString('hex');
+}
+
 async function initializeDefaultUsers() {
   const usersExist = await kv.get("users:initialized");
-  
+
   if (!usersExist) {
-    console.log("Inicializando usuários padrão...");
-    
+    console.log("Inicializando usuarios padrao...");
+    const defaultPwd = getDefaultPassword();
+
     const defaultUsers = [
       {
         username: "Dev_thales",
-        password: hashPassword("dev123"),
+        password: hashPassword(defaultPwd),
         role: "dev",
         firstName: "thales",
         name: "Thales",
@@ -61,7 +67,7 @@ async function initializeDefaultUsers() {
       },
       {
         username: "Gestao_thales",
-        password: hashPassword("gestao123"),
+        password: hashPassword(defaultPwd),
         role: "gestao",
         firstName: "thales",
         name: "Thales",
@@ -69,7 +75,7 @@ async function initializeDefaultUsers() {
       },
       {
         username: "Consultor_thales",
-        password: hashPassword("consultor123"),
+        password: hashPassword(defaultPwd),
         role: "consultor",
         firstName: "thales",
         name: "Thales",
@@ -77,7 +83,7 @@ async function initializeDefaultUsers() {
       },
       {
         username: "Mecanico_thales",
-        password: hashPassword("mecanico123"),
+        password: hashPassword(defaultPwd),
         role: "mecanico",
         firstName: "thales",
         name: "Thales",
@@ -147,137 +153,53 @@ app.get("/make-server-0092e077/health", async (c) => {
   });
 });
 
-// ==================== DEBUG - VERIFICAR USUÁRIOS ====================
+// ==================== DEBUG (PROTEGIDO — requer header X-Debug-Key) ====================
+
+// Middleware: debug endpoints só acessíveis com secret key
+function requireDebugKey(c: any): boolean {
+  const debugKey = Deno.env.get("DEBUG_SECRET_KEY");
+  if (!debugKey) return false; // Se não configurou key, debug fica desativado
+  return c.req.header("X-Debug-Key") === debugKey;
+}
 
 app.get("/make-server-0092e077/debug/users", async (c) => {
+  if (!requireDebugKey(c)) return c.json({ error: "Forbidden" }, 403);
   await ensureInitialized();
-  
+
   try {
     const users = await kv.getByPrefix("user:");
-    
     const userList = users
-      .filter(item => item && item.value) // Filtrar items válidos
+      .filter(item => item && item.value)
       .map(item => ({
         username: item.value.username,
         role: item.value.role,
         firstName: item.value.firstName,
         hasPassword: !!item.value.password,
-        passwordHash: item.value.password?.substring(0, 20) + "...", // Mostra só o início
         createdAt: item.value.createdAt
       }));
-    
-    return c.json({
-      totalUsers: userList.length,
-      initialized: await kv.get("users:initialized"),
-      users: userList
-    });
+
+    return c.json({ totalUsers: userList.length, users: userList });
   } catch (error) {
     console.error("Debug users error:", error);
-    return c.json({ error: "Failed to fetch users", details: error.message }, 500);
+    return c.json({ error: "Failed to fetch users" }, 500);
   }
 });
 
-// ==================== FORÇAR RESET DE USUÁRIOS ====================
-
 app.post("/make-server-0092e077/debug/reset-users", async (c) => {
+  if (!requireDebugKey(c)) return c.json({ error: "Forbidden" }, 403);
+
   try {
-    console.log("🔄 Resetando usuários...");
-    
-    // Deletar flag de inicialização
     await kv.del("users:initialized");
-    
-    // Deletar usuários antigos
     const oldUsers = await kv.getByPrefix("user:");
-    for (const user of oldUsers) {
-      await kv.del(user.key);
-    }
-    
-    // Recriar usuários
-    const defaultUsers = [
-      {
-        username: "Dev_thales",
-        password: hashPassword("dev123"),
-        role: "dev",
-        firstName: "thales",
-        name: "Thales",
-        permissions: ["full-access", "database", "settings", "users"],
-        createdAt: new Date().toISOString()
-      },
-      {
-        username: "Gestao_thales",
-        password: hashPassword("gestao123"),
-        role: "gestao",
-        firstName: "thales",
-        name: "Thales",
-        createdAt: new Date().toISOString()
-      },
-      {
-        username: "Consultor_thales",
-        password: hashPassword("consultor123"),
-        role: "consultor",
-        firstName: "thales",
-        name: "Thales",
-        createdAt: new Date().toISOString()
-      },
-      {
-        username: "Mecanico_thales",
-        password: hashPassword("mecanico123"),
-        role: "mecanico",
-        firstName: "thales",
-        name: "Thales",
-        createdAt: new Date().toISOString()
-      }
-    ];
+    for (const user of oldUsers) await kv.del(user.key);
 
-    for (const user of defaultUsers) {
-      await kv.set(`user:${user.username}`, user);
-      console.log(`✅ Criado: ${user.username} - Hash: ${user.password.substring(0, 20)}...`);
-    }
+    // Re-inicializa com os defaults
+    await initializeDefaultUsers();
 
-    await kv.set("users:initialized", true);
-    
-    console.log("✅ Reset completo!");
-    
-    return c.json({
-      message: "Usuários resetados com sucesso!",
-      users: defaultUsers.map(u => ({
-        username: u.username,
-        role: u.role,
-        passwordHash: u.password.substring(0, 20) + "..."
-      }))
-    });
+    return c.json({ message: "Usuarios resetados. Re-inicializados via initializeDefaultUsers()." });
   } catch (error) {
     console.error("Reset users error:", error);
     return c.json({ error: "Failed to reset users" }, 500);
-  }
-});
-
-// ==================== TESTE DE LOGIN (DEBUG) ====================
-
-app.post("/make-server-0092e077/debug/test-password", async (c) => {
-  try {
-    const { username, password } = await c.req.json();
-    
-    const user = await kv.get(`user:${username}`);
-    
-    if (!user) {
-      return c.json({ error: "Usuário não encontrado", username });
-    }
-    
-    const hashedInput = hashPassword(password);
-    const match = user.password === hashedInput;
-    
-    return c.json({
-      username,
-      userExists: true,
-      passwordHashStored: user.password.substring(0, 20) + "...",
-      passwordHashInput: hashedInput.substring(0, 20) + "...",
-      match,
-      message: match ? "✅ Senha correta!" : "❌ Senha incorreta!"
-    });
-  } catch (error) {
-    console.error("Test password error:", error);
-    return c.json({ error: "Failed to test password" }, 500);
   }
 });
 

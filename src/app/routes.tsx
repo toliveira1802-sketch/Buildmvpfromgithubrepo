@@ -1,4 +1,4 @@
-﻿import { createBrowserRouter, redirect } from "react-router";
+import { createBrowserRouter, redirect } from "react-router";
 import Landing from "./pages/Landing";
 import Login from "./pages/Login";
 import DevLogin from "./pages/DevLogin";
@@ -19,33 +19,15 @@ import AdminOrdensServico from "./pages/admin/AdminOrdensServico";
 import AdminOSDetalhes from "./pages/admin/AdminOSDetalhes";
 import AdminNovaOS from "./pages/admin/AdminNovaOS";
 import AdminConfiguracoes from "./pages/admin/AdminConfiguracoes";
-import AdminRelatorios from "./pages/admin/AdminRelatorios";
 import AdminPendencias from "./pages/admin/AdminPendencias";
 import AdminOperacional from "./pages/admin/AdminOperacional";
 import AdminAgendaMecanicos from "./pages/admin/AdminAgendaMecanicos";
 import AdminUsuarios from "./pages/admin/AdminUsuarios";
 import MecanicoView from "./pages/MecanicoView";
-import AdminFinanceiro from "./pages/admin/AdminFinanceiro";
-import AdminProdutividade from "./pages/admin/AdminProdutividade";
-import AdminIaQG from "./pages/admin/AdminIaQG";
-import GestaoOsUltimate from "./pages/gestao/GestaoOsUltimate";
-import GestaoVisaoGeral from "./pages/gestao/GestaoVisaoGeral";
-import GestaoMetas from "./pages/gestao/GestaoMetas";
-import GestaoMelhorias from "./pages/gestao/GestaoMelhorias";
 import VisaoGeral from "./pages/VisaoGeral";
 import AdminIntegracoes from "./pages/admin/AdminIntegracoes";
-import AdminTrelloMigracao from "./pages/admin/AdminTrelloMigracao";
 import DevIAPortal from "./pages/dev/DevIAPortal";
 import DevPerfilIA from "./pages/dev/DevPerfilIA";
-import GestaoFornecedores from "./pages/gestao/GestaoFornecedores";
-import GestaoDashboards from "./pages/gestao/GestaoDashboards";
-import GestaoRH from "./pages/gestao/GestaoRH";
-import GestaoOperacoes from "./pages/gestao/GestaoOperacoes";
-import GestaoFinanceiro from "./pages/gestao/GestaoFinanceiro";
-import GestaoComercial from "./pages/gestao/GestaoComercial";
-import GestaoTecnologia from "./pages/gestao/GestaoTecnologia";
-import GestaoVeiculosOrfaos from "./pages/gestao/GestaoVeiculosOrfaos";
-import AnalyticsFunil from "./pages/analytics/AnalyticsFunil";
 
 // NOVAS PÁGINAS DEV
 import DevLogs from "./pages/dev/DevLogs";
@@ -55,12 +37,14 @@ import DevAPI from "./pages/dev/DevAPI";
 import DevPermissoes from "./pages/dev/DevPermissoes";
 import DevProcessos from "./pages/dev/DevProcessos";
 import DevFerramentas from "./pages/dev/DevFerramentas";
-import DevSQL from "./pages/dev/DevSQL";
+
 import DevDashboardIA from "./pages/dev/DevDashboardIA";
 import DevOutrasHub from "./pages/dev/DevOutrasHub";
-import DevExplorer from "./pages/DevExplorer";
-import DevDashboardIA from "./pages/dev/DevDashboardIA";
-import DevOutrasHub from "./pages/dev/DevOutrasHub";
+
+// PORTAIS
+import { executiveRoutes } from "./portals/executive/routes";
+import { operationalRoutes } from "./portals/operational/routes";
+
 
 // NOVAS PÁGINAS - GESTÃO AVANÇADA
 import AdminEstoque from "./pages/admin/AdminEstoque";
@@ -74,10 +58,6 @@ import AdminContasReceber from "./pages/admin/AdminContasReceber";
 import AdminNFe from "./pages/admin/AdminNFe";
 
 // NOVAS PÁGINAS - ANALYTICS & FEEDBACK
-import AnalyticsROI from "./pages/analytics/AnalyticsROI";
-import AnalyticsLTV from "./pages/analytics/AnalyticsLTV";
-import AnalyticsChurn from "./pages/analytics/AnalyticsChurn";
-import AnalyticsNPS from "./pages/analytics/AnalyticsNPS";
 import AdminAvaliacoes from "./pages/admin/AdminAvaliacoes";
 import AdminReclamacoes from "./pages/admin/AdminReclamacoes";
 import AdminSugestoes from "./pages/admin/AdminSugestoes";
@@ -270,26 +250,7 @@ export const router = createBrowserRouter([
       },
     ],
   },
-  {
-    path: "/outros_relatorios",
-    Component: ProtectedRoute,
-    children: [
-      {
-        index: true,
-        Component: AdminRelatorios,
-      },
-    ],
-  },
-  {
-    path: "/relatorios",
-    Component: ProtectedRoute,
-    children: [
-      {
-        index: true,
-        Component: AdminRelatorios,
-      },
-    ],
-  },
+  // (Relatórios movidos para o Portal Executivo)
   {
     path: "/pendencias",
     Component: ProtectedRoute,
@@ -340,156 +301,8 @@ export const router = createBrowserRouter([
       },
     ],
   },
-  {
-    path: "/financeiro",
-    Component: ProtectedRoute,
-    children: [
-      {
-        index: true,
-        Component: AdminFinanceiro,
-      },
-    ],
-  },
-  {
-    path: "/produtividade",
-    Component: ProtectedRoute,
-    children: [
-      {
-        index: true,
-        Component: AdminProdutividade,
-      },
-    ],
-  },
-  {
-    path: "/ia-qg",
-    Component: ProtectedRoute,
-    children: [
-      {
-        index: true,
-        Component: AdminIaQG,
-      },
-    ],
-  },
-  {
-    path: "/gestao/os-ultimate",
-    Component: ProtectedRoute,
-    children: [
-      {
-        index: true,
-        Component: GestaoOsUltimate,
-      },
-    ],
-  },
-  {
-    path: "/gestao/visao-geral",
-    Component: ProtectedRoute,
-    children: [
-      {
-        index: true,
-        Component: GestaoVisaoGeral,
-      },
-    ],
-  },
-  {
-    path: "/gestao/metas",
-    Component: ProtectedRoute,
-    children: [
-      {
-        index: true,
-        Component: GestaoMetas,
-      },
-    ],
-  },
-  {
-    path: "/gestao/melhorias",
-    Component: ProtectedRoute,
-    children: [
-      {
-        index: true,
-        Component: GestaoMelhorias,
-      },
-    ],
-  },
-  {
-    path: "/visao-geral",
-    Component: ProtectedRoute,
-    children: [
-      {
-        index: true,
-        Component: VisaoGeral,
-      },
-    ],
-  },
-  {
-    path: "/admin/integracoes",
-    Component: ProtectedRoute,
-    children: [
-      {
-        index: true,
-        Component: AdminIntegracoes,
-      },
-    ],
-  },
-  {
-    path: "/admin/trello-migracao",
-    Component: ProtectedRoute,
-    children: [
-      {
-        index: true,
-        Component: AdminTrelloMigracao,
-      },
-    ],
-  },
-  {
-    path: "/gestao/fornecedores",
-    Component: ProtectedRoute,
-    children: [{ index: true, Component: GestaoFornecedores }],
-  },
-  {
-    path: "/gestao",
-    Component: ProtectedRoute,
-    children: [{ index: true, Component: GestaoDashboards }],
-  },
-  {
-    path: "/gestao/rh",
-    Component: ProtectedRoute,
-    children: [{ index: true, Component: GestaoRH }],
-  },
-  {
-    path: "/gestao/operacoes",
-    Component: ProtectedRoute,
-    children: [{ index: true, Component: GestaoOperacoes }],
-  },
-  {
-    path: "/gestao/financeiro",
-    Component: ProtectedRoute,
-    children: [{ index: true, Component: GestaoFinanceiro }],
-  },
-  {
-    path: "/gestao/comercial",
-    Component: ProtectedRoute,
-    children: [{ index: true, Component: GestaoComercial }],
-  },
-  {
-    path: "/gestao/tecnologia",
-    Component: ProtectedRoute,
-    children: [{ index: true, Component: GestaoTecnologia }],
-  },
-  {
-    path: "/gestao/veiculos-orfaos",
-    Component: ProtectedRoute,
-    children: [{ index: true, Component: GestaoVeiculosOrfaos }],
-  },
-  {
-    path: "/analytics/funil",
-    Component: ProtectedRoute,
-    children: [
-      {
-        index: true,
-        Component: AnalyticsFunil,
-      },
-    ],
-  },
+  // (Rotas migradas para o Portal Executivo)
+  // (Analytics movido para o Portal Executivo)
   // NOVAS ROTAS - GESTÃO AVANÇADA
   {
     path: "/estoque",
@@ -582,46 +395,7 @@ export const router = createBrowserRouter([
     ],
   },
   // NOVAS ROTAS - ANALYTICS & FEEDBACK
-  {
-    path: "/analytics/roi",
-    Component: ProtectedRoute,
-    children: [
-      {
-        index: true,
-        Component: AnalyticsROI,
-      },
-    ],
-  },
-  {
-    path: "/analytics/ltv",
-    Component: ProtectedRoute,
-    children: [
-      {
-        index: true,
-        Component: AnalyticsLTV,
-      },
-    ],
-  },
-  {
-    path: "/analytics/churn",
-    Component: ProtectedRoute,
-    children: [
-      {
-        index: true,
-        Component: AnalyticsChurn,
-      },
-    ],
-  },
-  {
-    path: "/analytics/nps",
-    Component: ProtectedRoute,
-    children: [
-      {
-        index: true,
-        Component: AnalyticsNPS,
-      },
-    ],
-  },
+  // (Analytics Avançado movido para o Portal Executivo)
   {
     path: "/avaliacoes",
     Component: ProtectedRoute,
@@ -755,16 +529,6 @@ export const router = createBrowserRouter([
     ],
   },
   {
-    path: "/dev-ferramentas",
-    Component: ProtectedRoute,
-    children: [
-      {
-        index: true,
-        Component: DevFerramentas,
-      },
-    ],
-  },
-  {
     path: "/dev-explorer",
     Component: ProtectedRoute,
     children: [{ index: true, Component: DevExplorer }],
@@ -784,21 +548,9 @@ export const router = createBrowserRouter([
     Component: ProtectedRoute,
     children: [{ index: true, Component: AdminIntegracoes }],
   },
-  {
-    path: "/dev-sql",
-    Component: ProtectedRoute,
-    children: [{ index: true, Component: DevSQL }],
-  },
-  {
-    path: "/dev-dashboard-ia",
-    Component: ProtectedRoute,
-    children: [{ index: true, Component: DevDashboardIA }],
-  },
-  {
-    path: "/dev-outras-hub",
-    Component: ProtectedRoute,
-    children: [{ index: true, Component: DevOutrasHub }],
-  },
+  // PORTAIS
+  executiveRoutes,
+  operationalRoutes,
   {
     path: "*",
     loader: () => redirect("/"),

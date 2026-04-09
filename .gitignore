@@ -9,3 +9,6 @@ Thumbs.db
 screenshot-tool/
 screenshots/
 *.cjs
+
+# Seeder (usa service_role key — nunca commitar com secrets)
+seed_mock.ts
