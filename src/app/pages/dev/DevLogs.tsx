@@ -1,9 +1,9 @@
 import { useEffect, useState } from "react";
 import DevLayout from "../../components/DevLayout";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../../components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../shared/ui/card';
 import { Activity, AlertCircle, CheckCircle2, Info, XCircle, RefreshCw } from "lucide-react";
-import { Button } from "../../components/ui/button";
-import { Badge } from "../../components/ui/badge";
+import { Button } from '../../shared/ui/button';
+import { Badge } from '../../shared/ui/badge';
 
 interface LogEntry {
   id: string;

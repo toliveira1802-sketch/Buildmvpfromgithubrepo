@@ -1,14 +1,13 @@
 ﻿import { useState, useEffect } from "react";
 import { FileText, RefreshCw, Loader2, TrendingUp, Clock, CheckCircle, XCircle, Wrench } from "lucide-react";
-import { Button } from "../../components/ui/button";
-import { Badge } from "../../components/ui/badge";
-import { Card, CardHeader, CardTitle, CardContent } from "../../components/ui/card";
+import { Button } from '../../shared/ui/button';
+import { Badge } from '../../shared/ui/badge';
+import { Card, CardHeader, CardTitle, CardContent } from '../../shared/ui/card';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
 import { useNavigate } from "react-router";
 import AdminLayout from "../../components/AdminLayout";
-import { createClient } from "@supabase/supabase-js";
-import { EmpresaToggle } from "../../components/EmpresaToggle";
-const sb = createClient("https://acuufrgoyjwzlyhopaus.supabase.co","eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFjdXVmcmdveWp3emx5aG9wYXVzIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2ODI2Mjk4OCwiZXhwIjoyMDgzODM4OTg4fQ.mCMQoBXRwSNrd1VgEa1uHCJwP3mcto5xjlt3LF6VUO4");
+import { supabase as sb } from "../../../lib/supabase";
+import { EmpresaToggle } from '../../shared/components/EmpresaToggle';
 
 const STATUS_COLORS: Record<string,string> = {
   diagnostico:"#94a3b8", orcamento:"#f59e0b", aguardando_aprovacao:"#f97316",
@@ -27,8 +26,8 @@ export default function GestaoOsUltimate() {
   async function load() {
     setLoading(true);
     const [osRes, mecRes] = await Promise.all([
-      sb.from("06_OS").select("id,numero_os,status,cliente_nome,veiculo_modelo,mecanico_nome,valor_total,created_at").order("created_at",{ascending:false}).limit(50),
-      sb.from("12_MECANICOS").select("nome").order("nome"),
+      sb.from("ordens_servico").select("id,numero_os,status,cliente_nome,veiculo_modelo,mecanico_nome,valor_total,created_at").order("created_at",{ascending:false}).limit(50),
+      sb.from("mecanicos").select("nome").order("nome"),
     ]);
     setOs(osRes.data||[]);
     setMecanicos(mecRes.data||[]);

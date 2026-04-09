@@ -1,17 +1,12 @@
 ﻿import { useState, useEffect } from "react";
 import { useNavigate } from "react-router";
 import { FileText, Plus, Search, RefreshCw, Loader2, Filter } from "lucide-react";
-import { Button } from "../../components/ui/button";
-import { Input } from "../../components/ui/input";
-import { Badge } from "../../components/ui/badge";
-import { Card } from "../../components/ui/card";
+import { Button } from '../../shared/ui/button';
+import { Input } from '../../shared/ui/input';
+import { Badge } from '../../shared/ui/badge';
+import { Card } from '../../shared/ui/card';
 import AdminLayout from "../../components/AdminLayout";
-import { createClient } from "@supabase/supabase-js";
-
-const sb = createClient(
-  "https://acuufrgoyjwzlyhopaus.supabase.co",
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFjdXVmcmdveWp3emx5aG9wYXVzIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2ODI2Mjk4OCwiZXhwIjoyMDgzODM4OTg4fQ.mCMQoBXRwSNrd1VgEa1uHCJwP3mcto5xjlt3LF6VUO4"
-);
+import { supabase as sb } from "../../../lib/supabase";
 
 const STATUS_COLORS: Record<string,string> = {
   diagnostico:"bg-zinc-700 text-zinc-300", orcamento:"bg-yellow-900/50 text-yellow-300",
@@ -41,7 +36,7 @@ export default function AdminOrdensServico() {
 
   async function load() {
     setLoading(true);
-    let q = sb.from("06_OS")
+    let q = sb.from("ordens_servico")
       .select("id,numero_os,status,cliente_nome,veiculo_placa,veiculo_modelo,mecanico_nome,valor_total,created_at")
       .order("created_at",{ascending:false})
       .range(page*PAGE, (page+1)*PAGE-1);

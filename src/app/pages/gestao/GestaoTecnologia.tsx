@@ -1,5 +1,5 @@
 import { Cpu, Activity, Brain } from "lucide-react";
-import { Card, CardHeader, CardTitle, CardDescription } from "../../components/ui/card";
+import { Card, CardHeader, CardTitle, CardDescription } from '../../shared/ui/card';
 import AdminLayout from "../../components/AdminLayout";
 
 const MOCK = [

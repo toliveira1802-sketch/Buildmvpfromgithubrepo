@@ -12,7 +12,7 @@ export default function AnalyticsChurn() {
 
   async function load() {
     setLoading(true);
-    const { data } = await sb.from("06_OS").select("status,motivo_recusa");
+    const { data } = await sb.from("ordens_servico").select("status,motivo_recusa");
     const total = (data||[]).length;
     const cancelados = (data||[]).filter(r => r.status==="cancelado");
     const taxa = total > 0 ? Math.round((cancelados.length/total)*100) : 0;

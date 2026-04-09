@@ -1,9 +1,16 @@
 import { createClient } from '@supabase/supabase-js';
 
-const supabaseUrl = 'https://acuufrgoyjwzlyhopaus.supabase.co';
-const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFjdXVmcmdveWp3emx5aG9wYXVzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjgyNjI5ODgsImV4cCI6MjA4MzgzODk4OH0.V7CgRaRFI8QAblr3TysttxPAY5E-e2vWEpmdu_2au4A';
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+
+if (!supabaseUrl || !supabaseAnonKey) {
+  throw new Error('Missing VITE_SUPABASE_URL or VITE_SUPABASE_ANON_KEY environment variables');
+}
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+
+/** Supabase project URL for API calls */
+export const supabaseProjectUrl = supabaseUrl;
 
 // ─── MULTI-TENANT HELPERS ──────────────────────────────────────────
 // Estrutura da sessão salva em localStorage como "dap-user"
@@ -33,7 +40,7 @@ export function getEmpresaId(): string | null {
 
 /**
  * Wrapper de query com filtro automático por empresa.
- * Uso: sbEmpresa('04_CLIENTS').select('*')
+ * Uso: sbEmpresa('clients').select('*')
  * → adiciona .eq('empresa_id', empresaId) automaticamente
  */
 export function sbEmpresa(table: string) {

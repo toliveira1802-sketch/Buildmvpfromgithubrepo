@@ -1,20 +1,14 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router";
 import { ArrowLeft, Search, Database, Table, ChevronDown, ChevronUp, RefreshCw, Loader2, ChevronRight, ChevronLeft, Eye } from "lucide-react";
-import { Button } from "../components/ui/button";
-import { Input } from "../components/ui/input";
-import { Badge } from "../components/ui/badge";
+import { Button } from '../shared/ui/button';
+import { Input } from '../shared/ui/input';
+import { Badge } from '../shared/ui/badge';
 import DevLayout from "../components/DevLayout";
-import { createClient } from "@supabase/supabase-js";
+import { supabase as supabaseAdmin } from "../../lib/supabase";
 
-const supabaseAdmin = createClient(
-  "https://acuufrgoyjwzlyhopaus.supabase.co",
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFjdXVmcmdveWp3emx5aG9wYXVzIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2ODI2Mjk4OCwiZXhwIjoyMDgzODM4OTg4fQ.mCMQoBXRwSNrd1VgEa1uHCJwP3mcto5xjlt3LF6VUO4",
-  { auth: { autoRefreshToken: false, persistSession: false } }
-);
-
-const CORE = ["00_companies","01_colaboradores","02_dev_roles","03_CRM","04_CLIENTS","05_VEHICLES","06_OS","07_OS_ITENS","08_OS_HISTORICO","11_USER_CLIENTS","12_MECANICOS","13_PENDENCIAS"];
-const LEGACY = ["98_CLIENTS_LEGADO_OFIINT"];
+const CORE = ["companies","colaboradores","clients","vehicles","ordens_servico","ordens_servico_itens","ordens_servico_historico","app_users","mecanicos","pendencias","recursos","agendamentos","recusas"];
+const LEGACY: string[] = [];
 const PAGE_SIZE = 50;
 
 interface TRow { table_name: string; row_count: number; }

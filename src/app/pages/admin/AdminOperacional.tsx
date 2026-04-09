@@ -1,16 +1,11 @@
 ﻿import { useState, useEffect } from "react";
 import { Wrench, RefreshCw, Loader2, Car, CheckCircle, Clock, AlertTriangle } from "lucide-react";
-import { Button } from "../../components/ui/button";
-import { Badge } from "../../components/ui/badge";
-import { Card, CardHeader, CardTitle, CardContent } from "../../components/ui/card";
+import { Button } from '../../shared/ui/button';
+import { Badge } from '../../shared/ui/badge';
+import { Card, CardHeader, CardTitle, CardContent } from '../../shared/ui/card';
 import { useNavigate } from "react-router";
 import AdminLayout from "../../components/AdminLayout";
-import { createClient } from "@supabase/supabase-js";
-
-const sb = createClient(
-  "https://acuufrgoyjwzlyhopaus.supabase.co",
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFjdXVmcmdveWp3emx5aG9wYXVzIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2ODI2Mjk4OCwiZXhwIjoyMDgzODM4OTg4fQ.mCMQoBXRwSNrd1VgEa1uHCJwP3mcto5xjlt3LF6VUO4"
-);
+import { supabase as sb } from "../../../lib/supabase";
 
 export default function AdminOperacional() {
   const navigate = useNavigate();
@@ -23,11 +18,11 @@ export default function AdminOperacional() {
   async function load() {
     setLoading(true);
     const [os, mecs] = await Promise.all([
-      sb.from("06_OS")
+      sb.from("ordens_servico")
         .select("id,numero_os,status,cliente_nome,veiculo_modelo,veiculo_placa,mecanico_nome,valor_total,created_at")
         .in("status", ["aprovado","em_execucao","diagnostico","orcamento","aguardando_aprovacao"])
         .order("created_at", { ascending: true }),
-      sb.from("12_MECANICOS").select("id,nome,especialidade,nivel").order("nome"),
+      sb.from("mecanicos").select("id,nome,especialidade,nivel").order("nome"),
     ]);
     setOsAtivas(os.data || []);
     setMecanicos(mecs.data || []);

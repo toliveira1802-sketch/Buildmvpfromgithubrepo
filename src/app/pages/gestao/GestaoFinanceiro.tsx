@@ -1,11 +1,11 @@
 ﻿import { useState, useEffect } from "react";
 import { DollarSign, TrendingUp, Car, Clock } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "../../components/ui/card";
-import { Progress } from "../../components/ui/progress";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../../shared/ui/card';
+import { Progress } from '../../shared/ui/progress';
 import AdminLayout from "../../components/AdminLayout";
 import { supabase } from "../../../lib/supabase";
 import { startOfMonth, endOfMonth } from "date-fns";
-import { EmpresaToggle } from "../../components/EmpresaToggle";
+import { EmpresaToggle } from '../../shared/components/EmpresaToggle';
 
 export default function GestaoFinanceiro() {
   const [data, setData] = useState({ faturamento: 0, ticket: 0, servicos: 0, presosPatrio: 0, atrasados: 0 });
@@ -17,9 +17,9 @@ export default function GestaoFinanceiro() {
     const end = endOfMonth(new Date()).toISOString();
 
     Promise.all([
-      supabase.from("06_OS").select("valor_total, status").gte("created_at", start).lte("created_at", end),
-      supabase.from("06_OS").select("id", { count: "exact", head: true }).in("status", ["aprovado","em_execucao"]),
-      supabase.from("06_OS").select("id", { count: "exact", head: true }).eq("status", "aguardando_aprovacao"),
+      supabase.from("ordens_servico").select("valor_total, status").gte("created_at", start).lte("created_at", end),
+      supabase.from("ordens_servico").select("id", { count: "exact", head: true }).in("status", ["aprovado","em_execucao"]),
+      supabase.from("ordens_servico").select("id", { count: "exact", head: true }).eq("status", "aguardando_aprovacao"),
     ]).then(([os, patio, atrasados]) => {
       const rows = os.data || [];
       const concluidas = rows.filter(r => r.status === "concluido" || r.status === "entregue");

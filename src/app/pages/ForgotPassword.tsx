@@ -1,9 +1,9 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router";
-import { Button } from "../components/ui/button";
-import { Input } from "../components/ui/input";
-import { Label } from "../components/ui/label";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../components/ui/card";
+import { Button } from '../shared/ui/button';
+import { Input } from '../shared/ui/input';
+import { Label } from '../shared/ui/label';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../shared/ui/card';
 import { User, ArrowLeft, CheckCircle2, KeyRound } from "lucide-react";
 import { toast } from "sonner";
 import { projectId, publicAnonKey } from '../../../utils/supabase/info';
@@ -53,19 +53,10 @@ export default function ForgotPassword() {
 
       setIsLoading(false);
       setStep("token");
-      toast.success(`Token enviado! Verifique o console.`);
-      
-      // Mostra o token no console para desenvolvimento
-      console.log("==== TOKEN DE RECUPERAÇÃO ====");
-      console.log("Usuário:", username);
-      console.log("Token:", data.token);
-      console.log("Válido até:", new Date(data.expiresAt).toLocaleString("pt-BR"));
-      console.log("==============================");
-      
-      toast.info(`Token: ${data.token}`, { duration: 10000 });
-    } catch (error: any) {
-      console.error('Forgot password error:', error);
-      toast.error(error.message || 'Erro ao solicitar recuperação');
+      toast.success("Token enviado! Verifique seu email/canal de recuperação.");
+    } catch (error: unknown) {
+      const msg = error instanceof Error ? error.message : 'Erro ao solicitar recuperação';
+      toast.error(msg);
       setIsLoading(false);
     }
   };
@@ -100,9 +91,9 @@ export default function ForgotPassword() {
       setIsLoading(false);
       setStep("success");
       toast.success("Token verificado com sucesso!");
-    } catch (error: any) {
-      console.error('Token verification error:', error);
-      toast.error(error.message || 'Token inválido ou expirado');
+    } catch (error: unknown) {
+      const msg = error instanceof Error ? error.message : 'Token inválido ou expirado';
+      toast.error(msg);
       setIsLoading(false);
     }
   };

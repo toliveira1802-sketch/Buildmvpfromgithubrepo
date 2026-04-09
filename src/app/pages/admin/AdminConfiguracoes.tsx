@@ -16,12 +16,12 @@ export default function AdminConfiguracoes() {
   async function load() {
     setLoading(true);
     const [emp, users, cli, veic, os, mecs] = await Promise.all([
-      sb.from("00_companies").select("*").limit(1).single(),
-      sb.from("01_colaboradores").select("id",{count:"exact",head:true}),
-      sb.from("04_CLIENTS").select("id",{count:"exact",head:true}),
-      sb.from("05_VEHICLES").select("id",{count:"exact",head:true}),
-      sb.from("06_OS").select("id",{count:"exact",head:true}),
-      sb.from("12_MECANICOS").select("id",{count:"exact",head:true}),
+      sb.from("companies").select("*").limit(1).single(),
+      sb.from("colaboradores").select("id",{count:"exact",head:true}),
+      sb.from("clients").select("id",{count:"exact",head:true}),
+      sb.from("vehicles").select("id",{count:"exact",head:true}),
+      sb.from("ordens_servico").select("id",{count:"exact",head:true}),
+      sb.from("mecanicos").select("id",{count:"exact",head:true}),
     ]);
     setEmpresa(emp.data);
     setStats({ usuarios:users.count||0, clientes:cli.count||0, veiculos:veic.count||0, os:os.count||0, mecanicos:mecs.count||0 });

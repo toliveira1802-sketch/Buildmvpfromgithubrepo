@@ -8,6 +8,7 @@ import {
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/app/shared/ui/card';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { Button } from '@/app/shared/ui/button';
+import { Badge } from '@/app/shared/ui/badge';
 import { Progress } from "@/app/shared/ui/progress";
 import { supabase as sb } from "@/lib/supabase";
 import { syncService } from "@/app/core/services/sync";
@@ -94,9 +95,9 @@ export default function GestaoVisaoGeral() {
     try {
       // HM-QA: Real-world fetching with fallback
       const [os, clientes, mecs] = await Promise.all([
-        sb.from("06_OS").select("status,valor_total,created_at"),
-        sb.from("04_CLIENTS").select("id", { count: "exact", head: true }),
-        sb.from("12_MECANICOS").select("id", { count: "exact", head: true }),
+        sb.from("ordens_servico").select("status,valor_total,created_at"),
+        sb.from("clients").select("id", { count: "exact", head: true }),
+        sb.from("mecanicos").select("id", { count: "exact", head: true }),
       ]);
 
       const rows = os.data || [];

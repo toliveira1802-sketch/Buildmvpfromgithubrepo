@@ -1,17 +1,17 @@
 import { useState, useRef, useEffect } from "react";
 import { Bot, Send, User, Sparkles, Brain, Lightbulb } from "lucide-react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../../components/ui/card";
-import { Badge } from "../../components/ui/badge";
-import { Button } from "../../components/ui/button";
-import { Input } from "../../components/ui/input";
-import { Avatar, AvatarFallback } from "../../components/ui/avatar";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../shared/ui/card';
+import { Badge } from '../../shared/ui/badge';
+import { Button } from '../../shared/ui/button';
+import { Input } from '../../shared/ui/input';
+import { Avatar, AvatarFallback } from '../../shared/ui/avatar';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "../../components/ui/select";
+} from '../../shared/ui/select';
 import AdminLayout from "../../components/AdminLayout";
 
 interface Mensagem {

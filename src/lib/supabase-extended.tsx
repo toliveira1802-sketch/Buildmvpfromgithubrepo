@@ -49,9 +49,22 @@ export const oficinaPayload = () => ({
  * Fetch completo da oficina_config para a empresa atual
  * Usa o oficina_id armazenado no localStorage
  */
+export const isDemoMode = () => localStorage.getItem('drprime_demo') === 'true';
+
 export const fetchOficinaConfig = async () => {
+  // Demo mode: skip Supabase, return mock config
+  if (isDemoMode()) {
+    return {
+      id: '00000000-0000-0000-0000-000000000000',
+      nome_oficina: 'Doctor Auto Prime (Demo)',
+      whatsapp: '11999999999',
+      endereco: 'Av. Demo, 100 - São Paulo',
+      empresa_id: '00000000-0000-0000-0000-000000000000',
+    };
+  }
+
   const oficina_id = sbOficina();
-  
+
   if (!oficina_id) {
     console.warn('Nenhuma oficina_id encontrada em localStorage');
     return null;
@@ -124,7 +137,7 @@ export const setupUserContext = async (userId: string, userRole: 'colaborador' |
     // Buscar empresa_id baseado no user_id
     if (userRole === 'colaborador') {
       const { data } = await supabase
-        .from('01_colaboradores')
+        .from('colaboradores')
         .select('empresa_id')
         .eq('auth_user_id', userId)
         .single();
@@ -132,7 +145,7 @@ export const setupUserContext = async (userId: string, userRole: 'colaborador' |
       empresaId = data?.empresa_id || '';
     } else if (userRole === 'mecanico') {
       const { data } = await supabase
-        .from('12_MECANICOS')
+        .from('mecanicos')
         .select('empresa_id')
         .eq('auth_user_id', userId)
         .single();
@@ -177,7 +190,7 @@ export const fetchColaboradoresSegmentado = async () => {
   }
 
   const { data, error } = await supabase
-    .from('01_colaboradores')
+    .from('colaboradores')
     .select('*')
     .eq('empresa_id', empresa_id);
 
@@ -201,7 +214,7 @@ export const fetchMecanicosSegmentado = async () => {
   }
 
   const { data, error } = await supabase
-    .from('12_MECANICOS')
+    .from('mecanicos')
     .select('*')
     .eq('empresa_id', empresa_id);
 
@@ -225,7 +238,7 @@ export const fetchOSSegmentado = async () => {
   }
 
   const { data, error } = await supabase
-    .from('06_OS')
+    .from('ordens_servico')
     .select('*')
     .eq('empresa_id', empresa_id);
 
@@ -245,7 +258,9 @@ export const clearUserContext = () => {
   localStorage.removeItem('empresa_id');
   localStorage.removeItem('oficina_id');
   localStorage.removeItem('auth_token');
-  // ... remova outros dados de usuário conforme necessário
+  localStorage.removeItem('drprime_demo');
+  localStorage.removeItem('dap-user');
+  sessionStorage.removeItem('dap-user');
 };
 
 // ============================================================================

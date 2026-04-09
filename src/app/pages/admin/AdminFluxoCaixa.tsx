@@ -1,15 +1,10 @@
 ﻿import { useState, useEffect } from "react";
 import { DollarSign, TrendingUp, TrendingDown, RefreshCw, AlertCircle } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from '../../shared/ui/card';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
-import { Button } from "../../components/ui/button";
+import { Button } from '../../shared/ui/button';
 import AdminLayout from "../../components/AdminLayout";
-import { createClient } from "@supabase/supabase-js";
-
-const sb = createClient(
-  "https://acuufrgoyjwzlyhopaus.supabase.co",
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFjdXVmcmdveWp3emx5aG9wYXVzIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2ODI2Mjk4OCwiZXhwIjoyMDgzODM4OTg4fQ.mCMQoBXRwSNrd1VgEa1uHCJwP3mcto5xjlt3LF6VUO4"
-);
+import { supabase as sb } from "../../../lib/supabase";
 
 export default function AdminFluxoCaixa() {
   const [loading, setLoading] = useState(true);
@@ -21,7 +16,7 @@ export default function AdminFluxoCaixa() {
   async function load() {
     setLoading(true);
     const start = new Date(); start.setDate(1); start.setHours(0,0,0,0);
-    const { data } = await sb.from("06_OS")
+    const { data } = await sb.from("ordens_servico")
       .select("status,valor_total,created_at")
       .gte("created_at", start.toISOString());
     const rows = data||[];

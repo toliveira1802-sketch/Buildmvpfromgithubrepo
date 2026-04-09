@@ -13,7 +13,7 @@ export default function AnalyticsLTV() {
 
   async function load() {
     setLoading(true);
-    const { data } = await sb.from("06_OS")
+    const { data } = await sb.from("ordens_servico")
       .select("cliente_nome,client_id,valor_total")
       .in("status",["concluido","entregue"]);
     const map: Record<string,{nome:string,total:number,count:number}> = {};

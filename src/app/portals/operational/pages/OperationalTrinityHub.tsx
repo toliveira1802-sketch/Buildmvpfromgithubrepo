@@ -13,7 +13,6 @@ import {
   LayoutGrid,
   ShieldCheck,
   AlertCircle,
-  MoreVertical,
   ArrowRight,
   Zap,
   Calendar
@@ -24,7 +23,6 @@ import { cn } from "@/app/shared/ui/utils";
 import { Card, CardContent } from "@/app/shared/ui/card";
 import { Button } from "@/app/shared/ui/button";
 import { Input } from "@/app/shared/ui/input";
-import OperationalLayout from "../components/OperationalLayout";
 
 export default function OperationalTrinityHub() {
   const [loading, setLoading] = useState(false);
@@ -48,7 +46,7 @@ export default function OperationalTrinityHub() {
       try {
         // Search Clients and Vehicles (by plate) simultaneously
         const { data: clients } = await supabase
-          .from("04_CLIENTS")
+          .from("clients")
           .select("*")
           .or(`full_name.ilike.%${searchQuery}%,phone.ilike.%${searchQuery}%`)
           .limit(5);
@@ -84,7 +82,7 @@ export default function OperationalTrinityHub() {
 
   const fetchVehicles = async (clientId: string) => {
     const { data } = await supabase
-      .from("05_VEHICLES")
+      .from("vehicles")
       .select("*")
       .eq("client_id", clientId);
     setVehicles(data || []);
@@ -93,7 +91,7 @@ export default function OperationalTrinityHub() {
 
   const fetchOSHistory = async (vehicleId: string) => {
     const { data } = await supabase
-      .from("06_OS")
+      .from("ordens_servico")
       .select("*")
       .eq("vehicle_id", vehicleId)
       .order("created_at", { ascending: false });

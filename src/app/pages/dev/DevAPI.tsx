@@ -1,8 +1,8 @@
 import { useEffect } from "react";
 import DevLayout from "../../components/DevLayout";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../../components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../shared/ui/card';
 import { Server, CheckCircle2, Clock, AlertCircle } from "lucide-react";
-import { Badge } from "../../components/ui/badge";
+import { Badge } from '../../shared/ui/badge';
 
 export default function DevAPI() {
   useEffect(() => {

@@ -1,11 +1,10 @@
 ﻿import { useState, useEffect } from "react";
 import { CheckSquare, RefreshCw, Loader2, Check, Circle } from "lucide-react";
-import { Button } from "../../components/ui/button";
-import { Card, CardHeader, CardTitle, CardContent } from "../../components/ui/card";
+import { Button } from '../../shared/ui/button';
+import { Card, CardHeader, CardTitle, CardContent } from '../../shared/ui/card';
 import { useNavigate } from "react-router";
 import AdminLayout from "../../components/AdminLayout";
-import { createClient } from "@supabase/supabase-js";
-const sb = createClient("https://acuufrgoyjwzlyhopaus.supabase.co","eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFjdXVmcmdveWp3emx5aG9wYXVzIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2ODI2Mjk4OCwiZXhwIjoyMDgzODM4OTg4fQ.mCMQoBXRwSNrd1VgEa1uHCJwP3mcto5xjlt3LF6VUO4");
+import { supabase as sb } from "../../../lib/supabase";
 const CHECKLIST_ITEMS = ["Documentos verificados","KM registrada","Fotos do veículo","Diagnóstico realizado","Orçamento elaborado","Cliente notificado"];
 export default function AdminChecklists() {
   const navigate = useNavigate();
@@ -15,7 +14,7 @@ export default function AdminChecklists() {
   useEffect(() => { load(); }, []);
   async function load() {
     setLoading(true);
-    const { data } = await sb.from("06_OS")
+    const { data } = await sb.from("ordens_servico")
       .select("id,numero_os,cliente_nome,veiculo_modelo,status")
       .in("status",["diagnostico","orcamento"])
       .order("created_at",{ascending:true}).limit(10);

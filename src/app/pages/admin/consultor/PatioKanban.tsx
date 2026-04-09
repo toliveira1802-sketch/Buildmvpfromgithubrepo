@@ -6,13 +6,7 @@ import {
   User, Wrench, AlertTriangle, Calendar
 } from "lucide-react";
 import ConsultorLayout from "../components/ConsultorLayout";
-import { createClient } from "@supabase/supabase-js";
-import { getEmpresaId } from "../../lib/supabase";
-
-const sb = createClient(
-  "https://acuufrgoyjwzlyhopaus.supabase.co",
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFjdXVmcmdveWp3emx5aG9wYXVzIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2ODI2Mjk4OCwiZXhwIjoyMDgzODM4OTg4fQ.mCMQoBXRwSNrd1VgEa1uHCJwP3mcto5xjlt3LF6VUO4"
-);
+import { supabase as sb, getEmpresaId } from "../../lib/supabase";
 
 // Ordem das colunas: Agendado ANTES de diagnóstico, Cancelado no FIM
 const COLUNAS = [
@@ -69,10 +63,10 @@ export default function PatioKanban() {
 
   async function load() {
     setLoading(true);
-    let osQ = sb.from("06_OS")
+    let osQ = sb.from("ordens_servico")
       .select("id,numero_os,status,client_nome,veiculo_placa,veiculo_modelo,mecanico_nome,valor_orcado,created_at,cor_card")
       .not("status", "in", "(entregue)").order("created_at", { ascending: true });
-    let recQ = sb.from("14_RECURSOS").select("*").eq("is_active", true).order("posicao_y").order("posicao_x");
+    let recQ = sb.from("recursos").select("*").eq("is_active", true).order("posicao_y").order("posicao_x");
 
     if (empresaId) {
       osQ = osQ.eq("empresa_id", empresaId) as any;
@@ -87,7 +81,7 @@ export default function PatioKanban() {
 
   async function moverStatus(osId: string, novoStatus: string) {
     setMovendo(osId);
-    await sb.from("06_OS").update({ status: novoStatus }).eq("id", osId);
+    await sb.from("ordens_servico").update({ status: novoStatus }).eq("id", osId);
     await load();
     setMovendo(null);
   }

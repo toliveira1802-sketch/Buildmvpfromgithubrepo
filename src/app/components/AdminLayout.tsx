@@ -5,9 +5,9 @@ import {
   Users, FileText, DollarSign, BarChart3, Activity,
   TrendingUp, Settings, LogOut, Menu, X, ChevronDown
 } from "lucide-react";
-import { Button } from "./ui/button";
-import { cn } from "./ui/utils";
-import Logo from "./Logo";
+import { Button } from "@/app/shared/ui/button";
+import { cn } from "@/app/shared/ui/utils";
+import Logo from "@/app/shared/components/Logo";
 
 interface AdminLayoutProps { children: ReactNode; }
 

@@ -1,16 +1,11 @@
 ﻿import { useState, useEffect } from "react";
 import { Wrench, RefreshCw, Loader2, Car } from "lucide-react";
-import { Button } from "../../components/ui/button";
-import { Badge } from "../../components/ui/badge";
-import { Card, CardHeader, CardTitle, CardContent } from "../../components/ui/card";
+import { Button } from '../../shared/ui/button';
+import { Badge } from '../../shared/ui/badge';
+import { Card, CardHeader, CardTitle, CardContent } from '../../shared/ui/card';
 import { useNavigate } from "react-router";
 import AdminLayout from "../../components/AdminLayout";
-import { createClient } from "@supabase/supabase-js";
-
-const sb = createClient(
-  "https://acuufrgoyjwzlyhopaus.supabase.co",
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFjdXVmcmdveWp3emx5aG9wYXVzIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2ODI2Mjk4OCwiZXhwIjoyMDgzODM4OTg4fQ.mCMQoBXRwSNrd1VgEa1uHCJwP3mcto5xjlt3LF6VUO4"
-);
+import { supabase as sb } from "../../../lib/supabase";
 
 export default function AdminAgendaMecanicos() {
   const navigate = useNavigate();
@@ -23,8 +18,8 @@ export default function AdminAgendaMecanicos() {
   async function load() {
     setLoading(true);
     const [mecs, os] = await Promise.all([
-      sb.from("12_MECANICOS").select("id,nome,especialidade,nivel").order("nome"),
-      sb.from("06_OS")
+      sb.from("mecanicos").select("id,nome,especialidade,nivel").order("nome"),
+      sb.from("ordens_servico")
         .select("id,numero_os,status,cliente_nome,veiculo_modelo,mecanico_nome,valor_total")
         .in("status", ["aprovado","em_execucao"])
         .order("created_at", { ascending: true }),

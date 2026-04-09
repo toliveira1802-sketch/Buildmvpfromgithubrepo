@@ -2,13 +2,7 @@ import { useEffect, useState } from "react";
 import { Car, Calendar, DollarSign, Key, ChevronRight, AlertCircle, CheckCircle2, Plus, Wrench, BarChart3, TrendingUp } from "lucide-react";
 import { useNavigate } from "react-router";
 import ConsultorLayout from "../components/ConsultorLayout";
-import { createClient } from "@supabase/supabase-js";
-import { getUser, getEmpresaId } from "../../lib/supabase";
-
-const sb = createClient(
-  "https://acuufrgoyjwzlyhopaus.supabase.co",
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFjdXVmcmdveWp3emx5aG9wYXVzIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2ODI2Mjk4OCwiZXhwIjoyMDgzODM4OTg4fQ.mCMQoBXRwSNrd1VgEa1uHCJwP3mcto5xjlt3LF6VUO4"
-);
+import { supabase as sb, getUser, getEmpresaId } from "../../lib/supabase";
 
 interface Pendencia { id: string; titulo: string; tipo: string; prioridade: string; created_at: string; os_id: string | null; }
 
@@ -34,9 +28,9 @@ export default function Dashboard() {
       // Filtro por empresa (multi-tenant)
       const filtro = empresaId ? { empresa_id: empresaId } : {};
 
-      let osQuery = sb.from("06_OS").select("status").in("status", ["diagnostico","orcamento","aguardando_aprovacao","aprovado","em_execucao","concluido"]);
-      let entregasQuery = sb.from("06_OS").select("id").eq("status","entregue").gte("updated_at", mesInicio.toISOString());
-      let pendQuery = sb.from("13_PENDENCIAS").select("id,titulo,tipo,prioridade,created_at,os_id").eq("status","aberta").order("created_at",{ascending:false}).limit(5);
+      let osQuery = sb.from("ordens_servico").select("status").in("status", ["diagnostico","orcamento","aguardando_aprovacao","aprovado","em_execucao","concluido"]);
+      let entregasQuery = sb.from("ordens_servico").select("id").eq("status","entregue").gte("updated_at", mesInicio.toISOString());
+      let pendQuery = sb.from("pendencias").select("id,titulo,tipo,prioridade,created_at,os_id").eq("status","aberta").order("created_at",{ascending:false}).limit(5);
 
       if (empresaId) {
         osQuery = osQuery.eq("empresa_id", empresaId) as any;
@@ -60,7 +54,7 @@ export default function Dashboard() {
   }
 
   async function resolverPendencia(id: string) {
-    await sb.from("13_PENDENCIAS").update({ status: "resolvida", resolvida_em: new Date().toISOString() }).eq("id", id);
+    await sb.from("pendencias").update({ status: "resolvida", resolvida_em: new Date().toISOString() }).eq("id", id);
     setPendencias(prev => prev.filter(p => p.id !== id));
   }
 

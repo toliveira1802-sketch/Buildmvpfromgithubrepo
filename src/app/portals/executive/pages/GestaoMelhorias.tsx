@@ -18,9 +18,9 @@ export default function GestaoMelhorias() {
   async function load() {
     setLoading(true);
     const [canc, osData] = await Promise.all([
-      sb.from("06_OS").select("id,numero_os,cliente_nome,veiculo_modelo,motivo_recusa,valor_total,created_at")
+      sb.from("ordens_servico").select("id,numero_os,cliente_nome,veiculo_modelo,motivo_recusa,valor_total,created_at")
         .eq("status","cancelado").order("created_at",{ascending:false}).limit(10),
-      sb.from("06_OS").select("status,valor_total"),
+      sb.from("ordens_servico").select("status,valor_total"),
     ]);
     setCanceladas(canc.data||[]);
     const rows = osData.data||[];

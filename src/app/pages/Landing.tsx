@@ -1,7 +1,7 @@
 import { useNavigate } from "react-router";
 import { useEffect } from "react";
-import { Button } from "../components/ui/button";
-import Logo from "../components/Logo";
+import { Button } from '../shared/ui/button';
+import Logo from '../shared/components/Logo';
 
 export default function Landing() {
   const navigate = useNavigate();

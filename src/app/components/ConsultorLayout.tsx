@@ -5,8 +5,8 @@ import {
   Users, FileText, DollarSign, BarChart3, Activity,
   TrendingUp, LogOut, Menu, X, ChevronDown, MessageSquare
 } from "lucide-react";
-import { Button } from "./ui/button";
-import { cn } from "./ui/utils";
+import { Button } from "@/app/shared/ui/button";
+import { cn } from "@/app/shared/ui/utils";
 
 interface ConsultorLayoutProps { children: ReactNode; }
 interface MenuItem { path: string; label: string; icon: any; }

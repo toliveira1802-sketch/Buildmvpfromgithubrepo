@@ -20,7 +20,7 @@ import { Button } from "@/app/shared/ui/button";
 import { Input } from "@/app/shared/ui/input";
 import { Label } from "@/app/shared/ui/label";
 import { toast } from "sonner";
-import OperationalLayout from "../components/OperationalLayout";
+
 import { useOficinaContext } from "@/lib/supabase-extended";
 import { motion, AnimatePresence } from "motion/react";
 import { cn } from "@/app/shared/ui/utils";
@@ -77,7 +77,7 @@ export default function FastCheckIn() {
     setLoading(true);
     try {
       const { data, error } = await supabase
-        .from("04_CLIENTS")
+        .from("clients")
         .select("*")
         .eq("empresa_id", empresa_id) // SEGMENTAÇÃO (HM-Engineer)
         .or(`full_name.ilike.%${searchTerm}%,phone.ilike.%${searchTerm}%`)
@@ -117,7 +117,7 @@ export default function FastCheckIn() {
     setLoading(true);
     try {
       const { data, error } = await supabase
-        .from("06_OS")
+        .from("ordens_servico")
         .insert({
           empresa_id, // HM-Engineer: Data consistency
           client_id: client.id,
@@ -145,16 +145,14 @@ export default function FastCheckIn() {
 
   if (contextLoading) {
     return (
-      <OperationalLayout>
-         <div className="flex items-center justify-center h-[60vh]">
-            <Loader2 className="animate-spin text-emerald-500 size-10" />
-         </div>
-      </OperationalLayout>
+      <div className="flex items-center justify-center h-[60vh]">
+        <Loader2 className="animate-spin text-emerald-500 size-10" />
+      </div>
     );
   }
 
   return (
-    <OperationalLayout>
+    <>
       <div className="max-w-4xl mx-auto pb-20">
         {/* Header - HM-Designer (Outfit Font) */}
         <header className="mb-12 text-center" style={{ fontFamily: "'Outfit', sans-serif" }}>
@@ -415,6 +413,6 @@ export default function FastCheckIn() {
           <p className="text-[9px] font-black uppercase tracking-[0.3em]">Synapse Secure Gate • Realtime Supabase Sync Active</p>
         </div>
       </div>
-    </OperationalLayout>
+    </>
   );
 }

@@ -1,12 +1,11 @@
 ﻿import { useState, useEffect } from "react";
 import { Bell, RefreshCw, Loader2, AlertTriangle, Clock, CheckCircle, FileText } from "lucide-react";
-import { Button } from "../../components/ui/button";
-import { Badge } from "../../components/ui/badge";
-import { Card } from "../../components/ui/card";
+import { Button } from '../../shared/ui/button';
+import { Badge } from '../../shared/ui/badge';
+import { Card } from '../../shared/ui/card';
 import { useNavigate } from "react-router";
 import AdminLayout from "../../components/AdminLayout";
-import { createClient } from "@supabase/supabase-js";
-const sb = createClient("https://acuufrgoyjwzlyhopaus.supabase.co","eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFjdXVmcmdveWp3emx5aG9wYXVzIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2ODI2Mjk4OCwiZXhwIjoyMDgzODM4OTg4fQ.mCMQoBXRwSNrd1VgEa1uHCJwP3mcto5xjlt3LF6VUO4");
+import { supabase as sb } from "../../../lib/supabase";
 interface Notif { id:string; tipo:string; mensagem:string; os_id?:number; numero_os?:string; icon:any; cor:string; badge:string; }
 export default function AdminNotifications() {
   const navigate = useNavigate();
@@ -16,9 +15,9 @@ export default function AdminNotifications() {
   async function load() {
     setLoading(true);
     const [aguardando, pendentes, concluidas] = await Promise.all([
-      sb.from("06_OS").select("id,numero_os,cliente_nome").eq("status","aguardando_aprovacao").order("created_at",{ascending:true}).limit(5),
-      sb.from("06_OS").select("id,numero_os,cliente_nome").eq("status","orcamento").order("created_at",{ascending:true}).limit(5),
-      sb.from("06_OS").select("id,numero_os,cliente_nome").eq("status","concluido").order("created_at",{ascending:false}).limit(3),
+      sb.from("ordens_servico").select("id,numero_os,cliente_nome").eq("status","aguardando_aprovacao").order("created_at",{ascending:true}).limit(5),
+      sb.from("ordens_servico").select("id,numero_os,cliente_nome").eq("status","orcamento").order("created_at",{ascending:true}).limit(5),
+      sb.from("ordens_servico").select("id,numero_os,cliente_nome").eq("status","concluido").order("created_at",{ascending:false}).limit(3),
     ]);
     const list: Notif[] = [];
     (aguardando.data||[]).forEach(o => list.push({

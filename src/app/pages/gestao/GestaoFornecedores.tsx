@@ -1,11 +1,10 @@
 ﻿import { useState, useEffect } from "react";
 import { Truck, RefreshCw, Loader2, Package } from "lucide-react";
-import { Button } from "../../components/ui/button";
-import { Card, CardHeader, CardTitle, CardContent, CardDescription } from "../../components/ui/card";
+import { Button } from '../../shared/ui/button';
+import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '../../shared/ui/card';
 import AdminLayout from "../../components/AdminLayout";
-import { createClient } from "@supabase/supabase-js";
-import { EmpresaToggle } from "../../components/EmpresaToggle";
-const sb = createClient("https://acuufrgoyjwzlyhopaus.supabase.co","eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFjdXVmcmdveWp3emx5aG9wYXVzIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2ODI2Mjk4OCwiZXhwIjoyMDgzODM4OTg4fQ.mCMQoBXRwSNrd1VgEa1uHCJwP3mcto5xjlt3LF6VUO4");
+import { supabase as sb } from "../../../lib/supabase";
+import { EmpresaToggle } from '../../shared/components/EmpresaToggle';
 
 export default function GestaoFornecedores() {
   const [pecas, setPecas] = useState<any[]>([]);
@@ -16,7 +15,7 @@ export default function GestaoFornecedores() {
 
   async function load() {
     setLoading(true);
-    const { data } = await sb.from("07_OS_ITENS").select("descricao,tipo,quantidade,valor_unitario,valor_total,os_id").eq("tipo","peca");
+    const { data } = await sb.from("ordens_servico_itens").select("descricao,tipo,quantidade,valor_unitario,valor_total,os_id").eq("tipo","peca");
     const rows = data||[];
     const descMap: Record<string,{count:number,total:number}> = {};
     rows.forEach(r => {

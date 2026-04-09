@@ -22,7 +22,7 @@ export default function GestaoMetas() {
   async function load() {
     setLoading(true);
     const start = new Date(); start.setDate(1); start.setHours(0,0,0,0);
-    const { data } = await sb.from("06_OS")
+    const { data } = await sb.from("ordens_servico")
       .select("status,valor_total,created_at")
       .gte("created_at", start.toISOString());
     const rows = data||[];

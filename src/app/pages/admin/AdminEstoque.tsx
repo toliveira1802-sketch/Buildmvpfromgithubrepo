@@ -1,17 +1,16 @@
 ﻿import { useState, useEffect } from "react";
 import { Package, RefreshCw, Loader2 } from "lucide-react";
-import { Button } from "../../components/ui/button";
-import { Card, CardHeader, CardTitle, CardContent } from "../../components/ui/card";
+import { Button } from '../../shared/ui/button';
+import { Card, CardHeader, CardTitle, CardContent } from '../../shared/ui/card';
 import AdminLayout from "../../components/AdminLayout";
-import { createClient } from "@supabase/supabase-js";
-const sb = createClient("https://acuufrgoyjwzlyhopaus.supabase.co","eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFjdXVmcmdveWp3emx5aG9wYXVzIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2ODI2Mjk4OCwiZXhwIjoyMDgzODM4OTg4fQ.mCMQoBXRwSNrd1VgEa1uHCJwP3mcto5xjlt3LF6VUO4");
+import { supabase as sb } from "../../../lib/supabase";
 export default function AdminEstoque() {
   const [itens, setItens] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   useEffect(() => { load(); }, []);
   async function load() {
     setLoading(true);
-    const { data } = await sb.from("07_OS_ITENS")
+    const { data } = await sb.from("ordens_servico_itens")
       .select("descricao,tipo,quantidade,valor_unitario")
       .eq("tipo","peca")
       .order("created_at",{ascending:false}).limit(50);

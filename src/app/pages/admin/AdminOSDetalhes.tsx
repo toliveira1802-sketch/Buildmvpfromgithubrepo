@@ -5,19 +5,14 @@ import {
   DollarSign, Plus, Trash2, Send, Link, MessageCircle,
   Tag, Edit, ChevronRight, AlertCircle, ThumbsUp, ThumbsDown, X
 } from "lucide-react";
-import { Button } from "../../components/ui/button";
-import { Badge } from "../../components/ui/badge";
-import { Textarea } from "../../components/ui/textarea";
-import { Input } from "../../components/ui/input";
-import { Label } from "../../components/ui/label";
+import { Button } from '../../shared/ui/button';
+import { Badge } from '../../shared/ui/badge';
+import { Textarea } from '../../shared/ui/textarea';
+import { Input } from '../../shared/ui/input';
+import { Label } from '../../shared/ui/label';
 import { toast } from "sonner";
 import ConsultorLayout from "../../components/ConsultorLayout";
-import { createClient } from "@supabase/supabase-js";
-
-const sb = createClient(
-  "https://acuufrgoyjwzlyhopaus.supabase.co",
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFjdXVmcmdveWp3emx5aG9wYXVzIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2ODI2Mjk4OCwiZXhwIjoyMDgzODM4OTg4fQ.mCMQoBXRwSNrd1VgEa1uHCJwP3mcto5xjlt3LF6VUO4"
-);
+import { supabase as sb } from "../../../lib/supabase";
 
 const STATUS_FLOW = [
   { key: "diagnostico",          label: "Diagnóstico",          color: "bg-purple-600" },
@@ -64,9 +59,9 @@ export default function AdminOSDetalhes() {
   async function load() {
     setLoading(true);
     const [osRes, itensRes, histRes] = await Promise.all([
-      sb.from("06_OS").select("*").eq("id", id).single(),
-      sb.from("07_OS_ITENS").select("*").eq("os_id", id).order("created_at"),
-      sb.from("08_OS_HISTORICO").select("*").eq("os_id", id).order("created_at", { ascending: true }),
+      sb.from("ordens_servico").select("*").eq("id", id).single(),
+      sb.from("ordens_servico_itens").select("*").eq("os_id", id).order("created_at"),
+      sb.from("ordens_servico_historico").select("*").eq("os_id", id).order("created_at", { ascending: true }),
     ]);
     setOs(osRes.data);
     setItens(itensRes.data || []);
@@ -77,19 +72,19 @@ export default function AdminOSDetalhes() {
   async function moverStatus(novoStatus: string) {
     if (!os || os.status === novoStatus) return;
     if (novoStatus === "cancelado" && !confirm("Cancelar esta OS?")) return;
-    await sb.from("06_OS").update({ status: novoStatus }).eq("id", os.id);
+    await sb.from("ordens_servico").update({ status: novoStatus }).eq("id", os.id);
     toast.success(`Status → ${novoStatus.replace(/_/g, " ")}`);
     await load();
   }
 
   async function toggleItemStatus(item: any, novoStatus: string) {
-    await sb.from("07_OS_ITENS").update({ status: novoStatus }).eq("id", item.id);
+    await sb.from("ordens_servico_itens").update({ status: novoStatus }).eq("id", item.id);
     await load();
   }
 
   async function removeItem(itemId: string) {
     if (!confirm("Remover este item?")) return;
-    await sb.from("07_OS_ITENS").delete().eq("id", itemId);
+    await sb.from("ordens_servico_itens").delete().eq("id", itemId);
     toast.success("Item removido");
     await load();
   }
@@ -99,7 +94,7 @@ export default function AdminOSDetalhes() {
     setAddingItem(true);
     const qtd = parseFloat(novoItem.quantidade) || 1;
     const unit = parseFloat(novoItem.valor_unitario) || 0;
-    await sb.from("07_OS_ITENS").insert({
+    await sb.from("ordens_servico_itens").insert({
       os_id: id, tipo: novoItem.tipo, descricao: novoItem.descricao,
       quantidade: qtd, valor_unitario: unit, valor_total: qtd * unit, status: "pendente"
     });
@@ -113,7 +108,7 @@ export default function AdminOSDetalhes() {
   async function enviarObs() {
     if (!obs.trim()) return;
     setSendingObs(true);
-    await sb.from("08_OS_HISTORICO").insert({
+    await sb.from("ordens_servico_historico").insert({
       os_id: id, empresa_id: os.empresa_id,
       status_novo: os.status, status_anterior: os.status,
       descricao: obs.trim(),

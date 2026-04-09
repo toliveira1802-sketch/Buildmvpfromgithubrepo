@@ -1,9 +1,9 @@
 import { useEffect } from "react";
 import DevLayout from "../../components/DevLayout";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../../components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../shared/ui/card';
 import { Activity, Cpu, CheckCircle2, AlertCircle, XCircle } from "lucide-react";
-import { Badge } from "../../components/ui/badge";
-import { Progress } from "../../components/ui/progress";
+import { Badge } from '../../shared/ui/badge';
+import { Progress } from '../../shared/ui/progress';
 
 export default function DevProcessos() {
   useEffect(() => {

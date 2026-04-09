@@ -1,9 +1,9 @@
 ﻿import { useState } from "react";
 import { useNavigate } from "react-router";
 import { Search, ExternalLink, Grid, List, Tag } from "lucide-react";
-import { Input } from "../components/ui/input";
-import { Badge } from "../components/ui/badge";
-import { Button } from "../components/ui/button";
+import { Input } from '../shared/ui/input';
+import { Badge } from '../shared/ui/badge';
+import { Button } from '../shared/ui/button';
 import DevLayout from "../components/DevLayout";
 
 const ALL_PAGES = [

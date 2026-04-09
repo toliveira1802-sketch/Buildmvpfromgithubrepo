@@ -24,8 +24,8 @@ export default function AdminRelatorios() {
     else if (periodo==="mes") { start=new Date(now.getFullYear(),now.getMonth(),1); }
     else { start=new Date(now.getFullYear(),0,1); }
     const [os, clientes] = await Promise.all([
-      sb.from("06_OS").select("status,valor_total,created_at").gte("created_at",start.toISOString()),
-      sb.from("04_CLIENTS").select("id",{count:"exact",head:true}).gte("created_at",start.toISOString()),
+      sb.from("ordens_servico").select("status,valor_total,created_at").gte("created_at",start.toISOString()),
+      sb.from("clients").select("id",{count:"exact",head:true}).gte("created_at",start.toISOString()),
     ]);
     const rows = os.data||[];
     const conc = rows.filter(r=>r.status==="concluido"||r.status==="entregue");

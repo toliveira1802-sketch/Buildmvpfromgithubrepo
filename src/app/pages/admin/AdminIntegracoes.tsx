@@ -1,12 +1,12 @@
 import { useState } from "react";
 import { Plug, CheckCircle2, XCircle, AlertCircle, Settings, Key, RefreshCw, Save } from "lucide-react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../../components/ui/card";
-import { Badge } from "../../components/ui/badge";
-import { Button } from "../../components/ui/button";
-import { Input } from "../../components/ui/input";
-import { Label } from "../../components/ui/label";
-import { Switch } from "../../components/ui/switch";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "../../components/ui/tabs";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../shared/ui/card';
+import { Badge } from '../../shared/ui/badge';
+import { Button } from '../../shared/ui/button';
+import { Input } from '../../shared/ui/input';
+import { Label } from '../../shared/ui/label';
+import { Switch } from '../../shared/ui/switch';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../shared/ui/tabs';
 import { toast } from "sonner";
 import AdminLayout from "../../components/AdminLayout";
 

@@ -1,13 +1,13 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router";
-import { Button } from "../components/ui/button";
-import { Input } from "../components/ui/input";
-import { Label } from "../components/ui/label";
-import { Checkbox } from "../components/ui/checkbox";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../components/ui/card";
-import { ArrowLeft, UserCircle2, Users, Wrench, User, Lock, Terminal, Loader2 } from "lucide-react";
+import { Button } from '../shared/ui/button';
+import { Input } from '../shared/ui/input';
+import { Label } from '../shared/ui/label';
+import { Checkbox } from '../shared/ui/checkbox';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../shared/ui/card';
+import { ArrowLeft, UserCircle2, Users, Wrench, User, Lock, Terminal, Loader2, Monitor } from "lucide-react";
 import { toast } from "sonner";
-import Logo from "../components/Logo";
+import Logo from '../shared/components/Logo';
 import { supabase } from "../../lib/supabase";
 import { setupUserContext } from "../../lib/supabase-extended";
 
@@ -27,6 +27,22 @@ export default function Login() {
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => { document.title = "Login - Doctor Auto"; }, []);
+
+  const handleDemoMode = () => {
+    const DEMO_UUID = "00000000-0000-0000-0000-000000000000";
+    const demoSession = {
+      id: 0, nome: "Demo Dev", cargo: "Dev",
+      username: "demo_dev", nivelAcessoId: 1,
+      primeiroAcesso: false, role: "dev",
+      empresa_id: DEMO_UUID,
+    };
+    localStorage.setItem("dap-user", JSON.stringify(demoSession));
+    localStorage.setItem("empresa_id", DEMO_UUID);
+    localStorage.setItem("oficina_id", DEMO_UUID);
+    localStorage.setItem("drprime_demo", "true");
+    toast.success("Modo Demo ativado!");
+    navigate("/executive", { replace: true });
+  };
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -65,13 +81,23 @@ export default function Login() {
         id: user.id, nome: user.nome, cargo: user.cargo,
         username: user.username, nivelAcessoId: user.nivelAcessoId,
         primeiroAcesso: user.primeiroAcesso, role: selectedRole.toLowerCase(),
+        empresa_id: user.empresa_id,
       };
       const storage = rememberMe ? localStorage : sessionStorage;
       storage.setItem("dap-user", JSON.stringify(session));
 
-      // Setup oficina context (multi-tenant segmentation)
-      const userRole = selectedRole.toLowerCase() as 'colaborador' | 'mecanico' | 'admin';
-      await setupUserContext(user.id, userRole);
+      // Setar empresa_id diretamente do resultado do login (multi-tenant)
+      if (user.empresa_id) {
+        localStorage.setItem("empresa_id", user.empresa_id);
+        localStorage.setItem("oficina_id", user.empresa_id);
+      }
+
+      // Setup oficina context (multi-tenant segmentation — fallback)
+      const roleMap: Record<string, 'colaborador' | 'mecanico' | 'admin'> = {
+        gestao: 'admin', consultor: 'colaborador', mecanico: 'mecanico', dev: 'admin'
+      };
+      const userRole = roleMap[selectedRole.toLowerCase()] || 'colaborador';
+      await setupUserContext(String(user.id), userRole).catch(() => {});
 
       toast.success(`Bem-vindo(a), ${user.nome}!`);
       navigate(roleData?.route || "/dashboard", { replace: true });
@@ -170,7 +196,24 @@ export default function Login() {
             </Card>
           </div>
         )}
-        <p className="text-center text-sm text-zinc-500 mt-8">Doctor Auto • Sistema de Gestão Automotiva</p>
+        {/* Demo Mode */}
+        <div className="mt-8 max-w-md mx-auto">
+          <div className="relative mb-4">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-zinc-800"></div>
+            </div>
+            <div className="relative flex justify-center text-xs">
+              <span className="px-3 bg-black text-zinc-600">PREVIEW</span>
+            </div>
+          </div>
+          <Button variant="ghost" onClick={handleDemoMode}
+            className="w-full py-5 text-sm text-zinc-500 hover:text-white border border-dashed border-zinc-800 hover:border-red-600/40 transition-all duration-300">
+            <Monitor className="w-4 h-4 mr-2" />
+            Entrar em Modo Demo
+          </Button>
+        </div>
+
+        <p className="text-center text-sm text-zinc-500 mt-6">Doctor Auto • Sistema de Gestão Automotiva</p>
       </div>
     </div>
   );

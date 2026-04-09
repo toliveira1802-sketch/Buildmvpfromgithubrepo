@@ -9,8 +9,8 @@ import {
   Network, BarChart3, Shield, Layers, Code2,
   Zap, Store
 } from "lucide-react";
-import { cn } from "./ui/utils";
-import Logo from "./Logo";
+import { cn } from "@/app/shared/ui/utils";
+import Logo from "@/app/shared/components/Logo";
 
 interface DevLayoutProps { children: ReactNode; }
 

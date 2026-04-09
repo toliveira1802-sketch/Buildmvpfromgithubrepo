@@ -1,6 +1,6 @@
 ﻿import { HelpCircle, ChevronDown, ChevronUp } from "lucide-react";
 import { useState } from "react";
-import { Card } from "../../components/ui/card";
+import { Card } from '../../shared/ui/card';
 import AdminLayout from "../../components/AdminLayout";
 const FAQ = [
   { q:"Como abrir uma nova OS?", r:"Vá em Ordens de Serviço > Nova OS ou clique em Nova OS no Dashboard." },

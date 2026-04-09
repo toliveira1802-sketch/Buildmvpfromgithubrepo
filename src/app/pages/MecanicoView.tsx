@@ -1,16 +1,11 @@
 ﻿import { useState, useEffect } from "react";
 import { Wrench, Clock, CheckCircle, RefreshCw, Loader2, Car, ChevronRight } from "lucide-react";
-import { Button } from "../components/ui/button";
-import { Badge } from "../components/ui/badge";
-import { Card } from "../components/ui/card";
+import { Button } from '../shared/ui/button';
+import { Badge } from '../shared/ui/badge';
+import { Card } from '../shared/ui/card';
 import { useNavigate } from "react-router";
 import AdminLayout from "../components/AdminLayout";
-import { createClient } from "@supabase/supabase-js";
-
-const sb = createClient(
-  "https://acuufrgoyjwzlyhopaus.supabase.co",
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFjdXVmcmdveWp3emx5aG9wYXVzIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2ODI2Mjk4OCwiZXhwIjoyMDgzODM4OTg4fQ.mCMQoBXRwSNrd1VgEa1uHCJwP3mcto5xjlt3LF6VUO4"
-);
+import { supabase as sb } from "../../lib/supabase";
 
 interface OS { id:number; numero_os:string; status:string; cliente_nome:string; veiculo_modelo:string; veiculo_placa:string; valor_total:number; created_at:string; }
 interface Mecanico { id:number; nome:string; especialidade:string|null; nivel:string; }
@@ -32,7 +27,7 @@ export default function MecanicoView() {
   useEffect(() => { if (mecSel) loadOs(mecSel); }, [mecSel]);
 
   async function loadMecs() {
-    const { data } = await sb.from("12_MECANICOS").select("id,nome,especialidade,nivel").order("nome");
+    const { data } = await sb.from("mecanicos").select("id,nome,especialidade,nivel").order("nome");
     setMecanicos(data||[]);
     if (data && data.length > 0) setMecSel(data[0].id);
     setLoading(false);
@@ -40,9 +35,9 @@ export default function MecanicoView() {
 
   async function loadOs(mecId:number) {
     setLoading(true);
-    const mec = mecanicos.find(m => m.id===mecId) || (await sb.from("12_MECANICOS").select("nome").eq("id",mecId).single()).data;
+    const mec = mecanicos.find(m => m.id===mecId) || (await sb.from("mecanicos").select("nome").eq("id",mecId).single()).data;
     if (!mec) { setLoading(false); return; }
-    const { data } = await sb.from("06_OS")
+    const { data } = await sb.from("ordens_servico")
       .select("id,numero_os,status,cliente_nome,veiculo_modelo,veiculo_placa,valor_total,created_at")
       .in("status",["aprovado","em_execucao","concluido"])
       .order("created_at",{ascending:false}).limit(30);
@@ -54,7 +49,7 @@ export default function MecanicoView() {
     const idx = STATUS_SEQ.indexOf(o.status);
     if (idx < 0 || idx >= STATUS_SEQ.length-1) return;
     setMoving(o.id);
-    await sb.from("06_OS").update({status:STATUS_SEQ[idx+1]}).eq("id",o.id);
+    await sb.from("ordens_servico").update({status:STATUS_SEQ[idx+1]}).eq("id",o.id);
     if (mecSel) await loadOs(mecSel);
     setMoving(null);
   }

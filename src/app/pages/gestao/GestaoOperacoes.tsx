@@ -1,12 +1,12 @@
 ﻿import { useState, useEffect } from "react";
 import { Wrench, AlertTriangle, CheckCircle, Clock, XCircle } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "../../components/ui/card";
-import { Badge } from "../../components/ui/badge";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../../shared/ui/card';
+import { Badge } from '../../shared/ui/badge';
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, Legend } from "recharts";
 import AdminLayout from "../../components/AdminLayout";
 import { supabase } from "../../../lib/supabase";
 import { startOfMonth, endOfMonth } from "date-fns";
-import { EmpresaToggle } from "../../components/EmpresaToggle";
+import { EmpresaToggle } from '../../shared/components/EmpresaToggle';
 
 const STATUS_COLORS: Record<string, string> = {
   pendente: "#f59e0b", em_execucao: "#3b82f6", concluido: "#22c55e", cancelado: "#ef4444",
@@ -19,7 +19,7 @@ export default function GestaoOperacoes() {
   useEffect(() => {
     const start = startOfMonth(new Date()).toISOString();
     const end = endOfMonth(new Date()).toISOString();
-    supabase.from("06_OS").select("status").gte("created_at", start).lte("created_at", end)
+    supabase.from("ordens_servico").select("status").gte("created_at", start).lte("created_at", end)
       .then(({ data }) => {
         const rows = data || [];
         setKpis({

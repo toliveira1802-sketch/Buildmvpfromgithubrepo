@@ -16,8 +16,8 @@ export default function AdminProdutividade() {
   async function load() {
     setLoading(true);
     const [mecs, os] = await Promise.all([
-      sb.from("12_MECANICOS").select("id,nome,especialidade,nivel"),
-      sb.from("06_OS").select("mecanico_nome,status,valor_total"),
+      sb.from("mecanicos").select("id,nome,especialidade,nivel"),
+      sb.from("ordens_servico").select("mecanico_nome,status,valor_total"),
     ]);
     const rows = os.data || [];
     const mecData = (mecs.data||[]).map(m => {

@@ -1,12 +1,12 @@
 import { useState } from "react";
 import { Settings, Save, RotateCcw, Sparkles, Sliders } from "lucide-react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../../components/ui/card";
-import { Badge } from "../../components/ui/badge";
-import { Button } from "../../components/ui/button";
-import { Label } from "../../components/ui/label";
-import { Textarea } from "../../components/ui/textarea";
-import { Slider } from "../../components/ui/slider";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "../../components/ui/tabs";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../shared/ui/card';
+import { Badge } from '../../shared/ui/badge';
+import { Button } from '../../shared/ui/button';
+import { Label } from '../../shared/ui/label';
+import { Textarea } from '../../shared/ui/textarea';
+import { Slider } from '../../shared/ui/slider';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../shared/ui/tabs';
 import { toast } from "sonner";
 import AdminLayout from "../../components/AdminLayout";
 

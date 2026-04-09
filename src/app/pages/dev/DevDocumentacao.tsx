@@ -1,8 +1,8 @@
 import { useEffect } from "react";
 import DevLayout from "../../components/DevLayout";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../../components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../shared/ui/card';
 import { BookOpen, FileText, Code, Terminal, Layers, AlertCircle } from "lucide-react";
-import { Button } from "../../components/ui/button";
+import { Button } from '../../shared/ui/button';
 
 export default function DevDocumentacao() {
   useEffect(() => {

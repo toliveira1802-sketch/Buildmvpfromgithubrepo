@@ -21,7 +21,7 @@ export default function AnalyticsFunil() {
 
   async function load() {
     setLoading(true);
-    const { data: rows } = await sb.from("06_OS").select("status,valor_total");
+    const { data: rows } = await sb.from("ordens_servico").select("status,valor_total");
     const counts: Record<string,number> = {};
     let cancelados = 0, faturamento = 0;
     (rows||[]).forEach(r => {

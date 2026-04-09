@@ -1,17 +1,12 @@
 ﻿import { useState, useEffect } from "react";
 import { useNavigate } from "react-router";
 import { Users, Search, RefreshCw, Loader2, Plus, Phone, Mail, Car } from "lucide-react";
-import { Button } from "../../components/ui/button";
-import { Input } from "../../components/ui/input";
-import { Badge } from "../../components/ui/badge";
-import { Card } from "../../components/ui/card";
+import { Button } from '../../shared/ui/button';
+import { Input } from '../../shared/ui/input';
+import { Badge } from '../../shared/ui/badge';
+import { Card } from '../../shared/ui/card';
 import AdminLayout from "../../components/AdminLayout";
-import { createClient } from "@supabase/supabase-js";
-
-const sb = createClient(
-  "https://acuufrgoyjwzlyhopaus.supabase.co",
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFjdXVmcmdveWp3emx5aG9wYXVzIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2ODI2Mjk4OCwiZXhwIjoyMDgzODM4OTg4fQ.mCMQoBXRwSNrd1VgEa1uHCJwP3mcto5xjlt3LF6VUO4"
-);
+import { supabase as sb } from "../../../lib/supabase";
 
 interface Cliente {
   id:number; full_name:string; email:string|null; phone:string|null;
@@ -33,7 +28,7 @@ export default function AdminClientes() {
   async function load() {
     setLoading(true);
     const [{ data, count }] = await Promise.all([
-      sb.from("04_CLIENTS").select("id,full_name,email,phone,cpf,cidade,status_cadastro,created_at", { count:"exact" })
+      sb.from("clients").select("id,full_name,email,phone,cpf,cidade,status_cadastro,created_at", { count:"exact" })
         .order("created_at",{ascending:false})
         .range(page*PAGE, (page+1)*PAGE-1)
     ]);
@@ -45,7 +40,7 @@ export default function AdminClientes() {
   async function buscar() {
     if (!search.trim()) { load(); return; }
     setLoading(true);
-    const { data } = await sb.from("04_CLIENTS")
+    const { data } = await sb.from("clients")
       .select("id,full_name,email,phone,cpf,cidade,status_cadastro,created_at")
       .or("full_name.ilike.%"+search+"%,phone.ilike.%"+search+"%,cpf.ilike.%"+search+"%,email.ilike.%"+search+"%")
       .order("created_at",{ascending:false}).limit(50);

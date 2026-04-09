@@ -45,7 +45,7 @@ export default function OSList() {
     setLoading(true);
     try {
       let query = supabase
-        .from("06_OS")
+        .from("ordens_servico")
         .select("*")
         .order("created_at", { ascending: false })
         .limit(50);

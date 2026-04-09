@@ -1,11 +1,11 @@
 ﻿import { useState, useEffect } from "react";
 import { ShoppingBag, UserCheck, UserX, CheckCheck, Bell } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "../../components/ui/card";
-import { Button } from "../../components/ui/button";
-import { Badge } from "../../components/ui/badge";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../../shared/ui/card';
+import { Button } from '../../shared/ui/button';
+import { Badge } from '../../shared/ui/badge';
 import AdminLayout from "../../components/AdminLayout";
 import { supabase } from "../../../lib/supabase";
-import { EmpresaToggle } from "../../components/EmpresaToggle";
+import { EmpresaToggle } from '../../shared/components/EmpresaToggle';
 
 interface Cliente { id: number; full_name?: string; email?: string; phone?: string; created_at: string; }
 
@@ -20,8 +20,8 @@ export default function GestaoComercial() {
   async function fetchData() {
     setLoading(true);
     const [{ data: pend }, { count }] = await Promise.all([
-      supabase.from("04_CLIENTS").select("*").eq("status_cadastro", "pendente"),
-      supabase.from("04_CLIENTS").select("id", { count: "exact", head: true }),
+      supabase.from("clients").select("*").eq("status_cadastro", "pendente"),
+      supabase.from("clients").select("id", { count: "exact", head: true }),
     ]);
     setPendentes(pend || []);
     setTotalClientes(count || 0);
@@ -29,17 +29,17 @@ export default function GestaoComercial() {
   }
 
   async function aprovar(id: string) {
-    await supabase.from("04_CLIENTS").update({ status_cadastro: "ativo" }).eq("id", id);
+    await supabase.from("clients").update({ status_cadastro: "ativo" }).eq("id", id);
     setPendentes(p => p.filter(c => c.id !== id));
   }
 
   async function rejeitar(id: string) {
-    await supabase.from("04_CLIENTS").update({ status_cadastro: "rejeitado" }).eq("id", id);
+    await supabase.from("clients").update({ status_cadastro: "rejeitado" }).eq("id", id);
     setPendentes(p => p.filter(c => c.id !== id));
   }
 
   async function aprovarTodos() {
-    await supabase.from("04_CLIENTS").update({ status_cadastro: "ativo" }).eq("status_cadastro", "pendente");
+    await supabase.from("clients").update({ status_cadastro: "ativo" }).eq("status_cadastro", "pendente");
     setPendentes([]);
   }
 

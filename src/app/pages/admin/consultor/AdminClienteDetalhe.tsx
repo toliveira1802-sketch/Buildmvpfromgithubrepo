@@ -1,12 +1,11 @@
 ﻿import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router";
 import { ArrowLeft, User, Phone, Mail, Car, FileText, Loader2, MapPin, CreditCard } from "lucide-react";
-import { Button } from "../../components/ui/button";
-import { Badge } from "../../components/ui/badge";
-import { Card, CardHeader, CardTitle, CardContent } from "../../components/ui/card";
+import { Button } from '../../shared/ui/button';
+import { Badge } from '../../shared/ui/badge';
+import { Card, CardHeader, CardTitle, CardContent } from '../../shared/ui/card';
 import AdminLayout from "../../components/AdminLayout";
-import { createClient } from "@supabase/supabase-js";
-const sb = createClient("https://acuufrgoyjwzlyhopaus.supabase.co","eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFjdXVmcmdveWp3emx5aG9wYXVzIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2ODI2Mjk4OCwiZXhwIjoyMDgzODM4OTg4fQ.mCMQoBXRwSNrd1VgEa1uHCJwP3mcto5xjlt3LF6VUO4");
+import { supabase as sb } from "../../../lib/supabase";
 export default function AdminClienteDetalhe() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -18,9 +17,9 @@ export default function AdminClienteDetalhe() {
   async function load() {
     setLoading(true);
     const [cli, veics, ordens] = await Promise.all([
-      sb.from("04_CLIENTS").select("*").eq("id",id).single(),
-      sb.from("05_VEHICLES").select("*").eq("client_id",id).order("created_at",{ascending:false}),
-      sb.from("06_OS").select("id,numero_os,status,valor_total,created_at,mecanico_nome,veiculo_modelo").eq("client_id",id).order("created_at",{ascending:false}).limit(10),
+      sb.from("clients").select("*").eq("id",id).single(),
+      sb.from("vehicles").select("*").eq("client_id",id).order("created_at",{ascending:false}),
+      sb.from("ordens_servico").select("id,numero_os,status,valor_total,created_at,mecanico_nome,veiculo_modelo").eq("client_id",id).order("created_at",{ascending:false}).limit(10),
     ]);
     setCliente(cli.data);
     setVeiculos(veics.data||[]);

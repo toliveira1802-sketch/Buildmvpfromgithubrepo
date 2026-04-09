@@ -14,7 +14,7 @@ export default function AnalyticsROI() {
 
   async function load() {
     setLoading(true);
-    const { data } = await sb.from("06_OS")
+    const { data } = await sb.from("ordens_servico")
       .select("valor_total,created_at")
       .in("status",["concluido","entregue"])
       .order("created_at",{ascending:true});

@@ -1,11 +1,10 @@
 import React, { useState, useEffect } from "react";
 import { 
-  Car, 
-  Search, 
-  Plus, 
-  MoreHorizontal, 
-  ClipboardList, 
-  User, 
+  Car,
+  Search,
+  Plus,
+  MoreHorizontal,
+  User,
   ChevronRight,
   Gauge,
   Calendar
@@ -31,7 +30,7 @@ export default function VehicleList() {
     setLoading(true);
     try {
       let query = supabase
-        .from("05_VEHICLES")
+        .from("vehicles")
         .select(`
           *,
           client:04_CLIENTS(full_name, phone)
@@ -114,12 +113,12 @@ export default function VehicleList() {
                 <div className="p-6 bg-gradient-to-br from-white/[0.03] to-transparent border-b border-white/[0.03]">
                    <div className="flex justify-between items-start mb-4">
                       <div className="bg-white text-black px-3 py-1 rounded-md font-mono text-sm font-black tracking-widest border-2 border-zinc-800 shadow-md">
-                        {v.plate}
+                        {v.placa}
                       </div>
                       <BadgeStatus status="Em Loja" />
                    </div>
-                   <h3 className="text-lg font-black text-white tracking-tight truncate uppercase">{v.model}</h3>
-                   <p className="text-[9px] text-zinc-600 font-bold uppercase tracking-[0.2em] mt-1">{v.maker || "Brand Expert"}</p>
+                   <h3 className="text-lg font-black text-white tracking-tight truncate uppercase">{v.modelo}</h3>
+                   <p className="text-[9px] text-zinc-600 font-bold uppercase tracking-[0.2em] mt-1">{v.marca || "Brand Expert"}</p>
                 </div>
 
                 <div className="p-6 space-y-4">

@@ -31,7 +31,7 @@ export default function ClientList() {
     setLoading(true);
     try {
       let query = supabase
-        .from("04_CLIENTS")
+        .from("clients")
         .select("*")
         .order("full_name", { ascending: true })
         .limit(50);

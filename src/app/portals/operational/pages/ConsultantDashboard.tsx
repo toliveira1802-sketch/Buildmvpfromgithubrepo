@@ -70,8 +70,8 @@ export default function ConsultantDashboard() {
   const fetchData = useCallback(async () => {
     setLoading(true);
     try {
-      let osQuery = supabase.from("06_OS").select("*").order("created_at", { ascending: false }).limit(100);
-      let clientQuery = supabase.from("04_CLIENTS").select("id, created_at", { count: "exact" });
+      let osQuery = supabase.from("ordens_servico").select("*").order("created_at", { ascending: false }).limit(100);
+      let clientQuery = supabase.from("clients").select("id, created_at", { count: "exact" });
 
       if (empresaId) {
         osQuery = osQuery.eq("empresa_id", empresaId);

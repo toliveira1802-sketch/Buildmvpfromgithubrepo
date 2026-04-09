@@ -1,15 +1,10 @@
 ﻿import { useState, useEffect } from "react";
 import { Users, RefreshCw, Loader2, Shield, Wrench, UserCheck, UserX } from "lucide-react";
-import { Button } from "../../components/ui/button";
-import { Badge } from "../../components/ui/badge";
-import { Card } from "../../components/ui/card";
+import { Button } from '../../shared/ui/button';
+import { Badge } from '../../shared/ui/badge';
+import { Card } from '../../shared/ui/card';
 import AdminLayout from "../../components/AdminLayout";
-import { createClient } from "@supabase/supabase-js";
-
-const sb = createClient(
-  "https://acuufrgoyjwzlyhopaus.supabase.co",
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFjdXVmcmdveWp3emx5aG9wYXVzIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2ODI2Mjk4OCwiZXhwIjoyMDgzODM4OTg4fQ.mCMQoBXRwSNrd1VgEa1uHCJwP3mcto5xjlt3LF6VUO4"
-);
+import { supabase as sb } from "../../../lib/supabase";
 
 const CARGO_COLORS: Record<string,string> = {
   Dev:"bg-purple-700", Gestao:"bg-blue-700", Consultor:"bg-green-700", Mecanico:"bg-orange-700",
@@ -24,7 +19,7 @@ export default function AdminUsuarios() {
 
   async function load() {
     setLoading(true);
-    const { data } = await sb.from("01_colaboradores")
+    const { data } = await sb.from("colaboradores")
       .select("id,nome,username,cargo,nivelAcessoId,ativo,primeiroAcesso,createdAt,auth_user_id")
       .order("createdAt", { ascending: false });
     setUsers(data || []);
@@ -32,7 +27,7 @@ export default function AdminUsuarios() {
   }
 
   async function toggleAtivo(u: any) {
-    await sb.from("01_colaboradores").update({ ativo: !u.ativo }).eq("id", u.id);
+    await sb.from("colaboradores").update({ ativo: !u.ativo }).eq("id", u.id);
     load();
   }
 

@@ -12,7 +12,7 @@ export default function AnalyticsNPS() {
 
   async function load() {
     setLoading(true);
-    const { data } = await sb.from("06_OS").select("status,valor_total");
+    const { data } = await sb.from("ordens_servico").select("status,valor_total");
     const total = (data||[]).length;
     const entregues = (data||[]).filter(r => r.status==="entregue");
     const somaTicket = entregues.reduce((s,r) => s+(r.valor_total||0),0);

@@ -1,18 +1,15 @@
 ﻿import { useState, useEffect } from "react";
 import { Users, Plus, Trash2, Search, UserCheck, UserX, Shield, RefreshCw, Wrench, Loader2 } from "lucide-react";
-import { Button } from "../components/ui/button";
-import { Card } from "../components/ui/card";
-import { Input } from "../components/ui/input";
-import { Badge } from "../components/ui/badge";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from "../components/ui/dialog";
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "../components/ui/alert-dialog";
-import { Label } from "../components/ui/label";
+import { Button } from '../shared/ui/button';
+import { Card } from '../shared/ui/card';
+import { Input } from '../shared/ui/input';
+import { Badge } from '../shared/ui/badge';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from '../shared/ui/dialog';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '../shared/ui/alert-dialog';
+import { Label } from '../shared/ui/label';
 import { toast } from "sonner";
 import DevLayout from "../components/DevLayout";
-import { createClient } from "@supabase/supabase-js";
-const SUPABASE_URL = "https://acuufrgoyjwzlyhopaus.supabase.co";
-const SERVICE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFjdXVmcmdveWp3emx5aG9wYXVzIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2ODI2Mjk4OCwiZXhwIjoyMDgzODM4OTg4fQ.mCMQoBXRwSNrd1VgEa1uHCJwP3mcto5xjlt3LF6VUO4";
-const supabaseAdmin = createClient(SUPABASE_URL, SERVICE_KEY, { auth: { autoRefreshToken: false, persistSession: false } });
+import { supabase as supabaseAdmin } from "../../lib/supabase";
 type Cargo = "Dev" | "Gestao" | "Consultor" | "Mecanico";
 type Nivel = "junior" | "pleno" | "senior" | "master";
 interface Usuario { id: number; nome: string; email: string|null; username: string|null; cargo: string|null; nivelAcessoId: number|null; ativo: boolean; primeiroAcesso: boolean; auth_user_id: string|null; createdAt: string; mecanico?: {especialidade:string|null;nivel:string}|null; }
@@ -30,11 +27,11 @@ export default function DevUsers() {
   const load = async () => {
     setLoading(true);
     try {
-      const {data:users,error} = await supabaseAdmin.from("10_users").select("id,nome,email,username,cargo,nivelAcessoId,ativo,primeiroAcesso,auth_user_id,createdAt").order("createdAt",{ascending:false});
+      const {data:users,error} = await supabaseAdmin.from("app_users").select("id,nome,email,username,cargo,nivelAcessoId,ativo,primeiroAcesso,auth_user_id,createdAt").order("createdAt",{ascending:false});
       if (error) throw error;
       const mecIds = (users||[]).filter(u=>u.nivelAcessoId===4).map(u=>u.id);
       const mecMap:Record<number,any>={};
-      if (mecIds.length>0) { const {data:mecs} = await supabaseAdmin.from("12_MECANICOS").select("user_id,especialidade,nivel").in("user_id",mecIds); (mecs||[]).forEach(m=>{mecMap[m.user_id]=m;}); }
+      if (mecIds.length>0) { const {data:mecs} = await supabaseAdmin.from("mecanicos").select("user_id,especialidade,nivel").in("user_id",mecIds); (mecs||[]).forEach(m=>{mecMap[m.user_id]=m;}); }
       setUsuarios((users||[]).map(u=>({...u,mecanico:mecMap[u.id]??null})));
     } catch(err:any){ toast.error("Erro: "+err.message); } finally { setLoading(false); }
   };
@@ -57,8 +54,8 @@ export default function DevUsers() {
       setCreateOpen(false);setForm(emptyForm);load();
     } catch(err:any){toast.error("Erro: "+err.message);} finally{setSaving(false);}
   };
-  const handleToggle = async (u:Usuario)=>{ const {error} = await supabaseAdmin.from("10_users").update({ativo:!u.ativo}).eq("id",u.id); if (error){toast.error(error.message);return;} toast.success(u.nome+" "+(u.ativo?"desativado":"ativado"));load(); };
-  const handleDelete = async ()=>{ if (!selected) return; setSaving(true); try { const {error} = await supabaseAdmin.from("10_users").delete().eq("id",selected.id); if (error) throw error; toast.success(selected.nome+" removido"); setDeleteOpen(false);setSelected(null);load(); } catch(err:any){toast.error("Erro: "+err.message);} finally{setSaving(false);} };
+  const handleToggle = async (u:Usuario)=>{ const {error} = await supabaseAdmin.from("app_users").update({ativo:!u.ativo}).eq("id",u.id); if (error){toast.error(error.message);return;} toast.success(u.nome+" "+(u.ativo?"desativado":"ativado"));load(); };
+  const handleDelete = async ()=>{ if (!selected) return; setSaving(true); try { const {error} = await supabaseAdmin.from("app_users").delete().eq("id",selected.id); if (error) throw error; toast.success(selected.nome+" removido"); setDeleteOpen(false);setSelected(null);load(); } catch(err:any){toast.error("Erro: "+err.message);} finally{setSaving(false);} };
   return (
     <DevLayout>
       <div className="container mx-auto p-6 space-y-6 max-w-6xl">

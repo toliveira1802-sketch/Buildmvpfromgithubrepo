@@ -1,10 +1,10 @@
 import { useEffect } from "react";
 import DevLayout from "../../components/DevLayout";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../../components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../shared/ui/card';
 import { Settings, Database, Server, Shield, Bell, AlertCircle } from "lucide-react";
-import { Button } from "../../components/ui/button";
-import { Switch } from "../../components/ui/switch";
-import { Label } from "../../components/ui/label";
+import { Button } from '../../shared/ui/button';
+import { Switch } from '../../shared/ui/switch';
+import { Label } from '../../shared/ui/label';
 
 export default function DevConfiguracoes() {
   useEffect(() => {

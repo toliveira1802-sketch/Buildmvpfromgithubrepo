@@ -1,17 +1,11 @@
 import { useState } from "react";
 import { useNavigate } from "react-router";
 import { Wrench, LogIn, ArrowLeft, Eye, EyeOff, ChevronDown } from "lucide-react";
-import { Button } from "../components/ui/button";
-import { Input } from "../components/ui/input";
-import { Label } from "../components/ui/label";
+import { Button } from '../shared/ui/button';
+import { Input } from '../shared/ui/input';
+import { Label } from '../shared/ui/label';
 import { toast } from "sonner";
-import { createClient } from "@supabase/supabase-js";
-
-const sb = createClient(
-  "https://acuufrgoyjwzlyhopaus.supabase.co",
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFjdXVmcmdveWp3emx5aG9wYXVzIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2ODI2Mjk4OCwiZXhwIjoyMDgzODM4OTg4fQ.mCMQoBXRwSNrd1VgEa1uHCJwP3mcto5xjlt3LF6VUO4",
-  { auth: { autoRefreshToken: false, persistSession: false } }
-);
+import { supabase as sb } from "../../lib/supabase";
 
 export default function StaffLogin() {
   const navigate = useNavigate();
@@ -26,7 +20,7 @@ export default function StaffLogin() {
     try {
       // Busca em 01_colaboradores (nova tabela) com join em 00_companies
       const { data: colab, error } = await sb
-        .from("01_colaboradores")
+        .from("colaboradores")
         .select("id, nome, cargo, nivel_acesso, empresa_id, username, senha_hash, primeiro_acesso, 00_companies(id, nome, slug, cor_primaria)")
         .eq("username", username)
         .eq("is_active", true)
@@ -36,7 +30,7 @@ export default function StaffLogin() {
       let user: any = colab;
       if (error || !colab) {
         const { data: legacy } = await sb
-          .from("10_users")
+          .from("app_users")
           .select("id, nome, cargo, nivelAcessoId, empresaId, username, senha, primeiroAcesso")
           .or(`username.eq.${username},email.eq.${username}`)
           .eq("ativo", true)
@@ -49,9 +43,9 @@ export default function StaffLogin() {
       }
 
       // Buscar empresa se não veio no join
-      let empresa: any = (user as any)["00_companies"] || null;
+      let empresa: any = (user as any)["companies"] || null;
       if (!empresa && user.empresa_id) {
-        const { data: emp } = await sb.from("00_companies").select("id, nome, slug, cor_primaria").eq("id", user.empresa_id).single();
+        const { data: emp } = await sb.from("companies").select("id, nome, slug, cor_primaria").eq("id", user.empresa_id).single();
         empresa = emp;
       }
 

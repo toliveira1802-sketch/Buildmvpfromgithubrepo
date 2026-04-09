@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Users, TrendingUp, ThumbsUp, ThumbsDown } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "../../components/ui/card";
-import { Progress } from "../../components/ui/progress";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../../shared/ui/card';
+import { Progress } from '../../shared/ui/progress';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from "recharts";
 import AdminLayout from "../../components/AdminLayout";
 import { supabase } from "../../../lib/supabase";

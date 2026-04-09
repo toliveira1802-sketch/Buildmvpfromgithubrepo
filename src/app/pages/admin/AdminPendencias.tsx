@@ -1,16 +1,11 @@
 ﻿import { useState, useEffect } from "react";
 import { AlertTriangle, RefreshCw, Loader2, CheckCircle, Clock, FileText } from "lucide-react";
-import { Button } from "../../components/ui/button";
-import { Badge } from "../../components/ui/badge";
-import { Card } from "../../components/ui/card";
+import { Button } from '../../shared/ui/button';
+import { Badge } from '../../shared/ui/badge';
+import { Card } from '../../shared/ui/card';
 import { useNavigate } from "react-router";
 import AdminLayout from "../../components/AdminLayout";
-import { createClient } from "@supabase/supabase-js";
-
-const sb = createClient(
-  "https://acuufrgoyjwzlyhopaus.supabase.co",
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFjdXVmcmdveWp3emx5aG9wYXVzIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2ODI2Mjk4OCwiZXhwIjoyMDgzODM4OTg4fQ.mCMQoBXRwSNrd1VgEa1uHCJwP3mcto5xjlt3LF6VUO4"
-);
+import { supabase as sb } from "../../../lib/supabase";
 
 interface OS { id:number; numero_os:string; status:string; cliente_nome:string; veiculo_modelo:string; valor_total:number; created_at:string; }
 
@@ -25,9 +20,9 @@ export default function AdminPendencias() {
   async function load() {
     setLoading(true);
     const [p, a] = await Promise.all([
-      sb.from("06_OS").select("id,numero_os,status,cliente_nome,veiculo_modelo,valor_total,created_at")
+      sb.from("ordens_servico").select("id,numero_os,status,cliente_nome,veiculo_modelo,valor_total,created_at")
         .eq("status","orcamento").order("created_at",{ascending:true}),
-      sb.from("06_OS").select("id,numero_os,status,cliente_nome,veiculo_modelo,valor_total,created_at")
+      sb.from("ordens_servico").select("id,numero_os,status,cliente_nome,veiculo_modelo,valor_total,created_at")
         .eq("status","aguardando_aprovacao").order("created_at",{ascending:true}),
     ]);
     setPendentes(p.data||[]);

@@ -28,9 +28,6 @@ function getAllowedLevels(pathname: string): number[] {
   return DEFAULT_ALLOWED_LEVELS;
 }
 
-// TODO: REMOVER — Demo mode bypass para teste de UI
-const DEMO_BYPASS = true;
-
 export default function ProtectedRoute() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -38,14 +35,6 @@ export default function ProtectedRoute() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   useEffect(() => {
-    if (DEMO_BYPASS) {
-      const fakeUser = { id: 0, nome: "Thales", cargo: "Gestão", nivelAcessoId: 2, role: "gestao" };
-      if (!localStorage.getItem("dap-user")) localStorage.setItem("dap-user", JSON.stringify(fakeUser));
-      setIsAuthenticated(true);
-      setIsLoading(false);
-      return;
-    }
-
     const raw = localStorage.getItem("dap-user") || sessionStorage.getItem("dap-user");
 
     if (!raw && !location.pathname.startsWith("/operational")) {

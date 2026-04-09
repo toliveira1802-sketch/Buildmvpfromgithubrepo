@@ -5,14 +5,8 @@ import {
   Loader2, User, Car, Clock, Phone, Calendar, AlertTriangle
 } from "lucide-react";
 import ConsultorLayout from "../../components/ConsultorLayout";
-import { createClient } from "@supabase/supabase-js";
-import { getEmpresaId, getUser } from "../../../lib/supabase";
+import { supabase as sb, getEmpresaId, getUser } from "../../../lib/supabase";
 import { toast } from "sonner";
-
-const sb = createClient(
-  "https://acuufrgoyjwzlyhopaus.supabase.co",
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFjdXVmcmdveWp3emx5aG9wYXVzIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2ODI2Mjk4OCwiZXhwIjoyMDgzODM4OTg4fQ.mCMQoBXRwSNrd1VgEa1uHCJwP3mcto5xjlt3LF6VUO4"
-);
 
 interface Agendamento {
   id: string; client_nome: string; client_phone: string | null;
@@ -61,7 +55,7 @@ export default function AdminAgendamentos() {
     setLoading(true);
     const inicio = new Date(ano, mes, 1).toISOString();
     const fim    = new Date(ano, mes + 1, 0, 23, 59, 59).toISOString();
-    let q = sb.from("15_AGENDAMENTOS")
+    let q = sb.from("agendamentos")
       .select("id,client_nome,client_phone,veiculo_placa,veiculo_modelo,data_agendada,status,descricao,os_id,client_id")
       .gte("data_agendada", inicio).lte("data_agendada", fim)
       .order("data_agendada");
@@ -91,7 +85,7 @@ export default function AdminAgendamentos() {
     if (!form.client_nome || !form.data) { toast.error("Nome e data são obrigatórios"); return; }
     setSalvando(true);
     const dataHora = new Date(`${form.data}T${form.hora}`).toISOString();
-    const { error } = await sb.from("15_AGENDAMENTOS").insert({
+    const { error } = await sb.from("agendamentos").insert({
       empresa_id: empresaId, client_nome: form.client_nome,
       client_phone: form.client_phone || null, veiculo_placa: form.veiculo_placa || null,
       veiculo_modelo: form.veiculo_modelo || null, descricao: form.descricao || null,
@@ -119,9 +113,9 @@ export default function AdminAgendamentos() {
     }
     setCancelando(true);
     // Registra em 97_RECUSAS
-    await sb.from("97_RECUSAS").insert({
+    await sb.from("recusas").insert({
       empresa_id: empresaId, tipo: "agendamento",
-      referencia_id: agSelecionado!.id, referencia_tipo: "15_AGENDAMENTOS",
+      referencia_id: agSelecionado!.id, referencia_tipo: "agendamentos",
       client_id: agSelecionado!.client_id, client_nome: agSelecionado!.client_nome,
       client_phone: agSelecionado!.client_phone,
       motivo: motivoCancelamento.trim(), tentativas_ia: tentativasIa,
@@ -129,7 +123,7 @@ export default function AdminAgendamentos() {
       dados_snapshot: agSelecionado as any,
     });
     // Atualiza agendamento
-    await sb.from("15_AGENDAMENTOS").update({ status: "cancelado" }).eq("id", agSelecionado!.id);
+    await sb.from("agendamentos").update({ status: "cancelado" }).eq("id", agSelecionado!.id);
     toast.success("Agendamento cancelado e motivo registrado.");
     setModal(null); setAgSelecionado(null); setMotivoCancelamento(""); setTentativasIa(0);
     setIaMsg("Por que deseja cancelar este agendamento?");
@@ -141,7 +135,7 @@ export default function AdminAgendamentos() {
     if (!novaData) { toast.error("Informe a nova data"); return; }
     setReagendando(true);
     const dataHora = new Date(`${novaData}T${novaHora}`).toISOString();
-    await sb.from("15_AGENDAMENTOS").update({ data_agendada: dataHora, status: "reagendado" }).eq("id", agSelecionado!.id);
+    await sb.from("agendamentos").update({ data_agendada: dataHora, status: "reagendado" }).eq("id", agSelecionado!.id);
     toast.success("Reagendado com sucesso!");
     setModal(null); setNovaData(""); setNovaHora("09:00");
     await load(); setReagendando(false);
@@ -149,7 +143,7 @@ export default function AdminAgendamentos() {
 
   // ── CONFIRMAR — abre Nova OS ──
   async function confirmarEAbrirOS() {
-    await sb.from("15_AGENDAMENTOS").update({ status: "confirmado" }).eq("id", agSelecionado!.id);
+    await sb.from("agendamentos").update({ status: "confirmado" }).eq("id", agSelecionado!.id);
     toast.success("Confirmado! Abrindo Nova OS...");
     setModal(null);
     // Navega para Nova OS com dados pré-preenchidos via state

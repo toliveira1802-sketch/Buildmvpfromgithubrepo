@@ -1,6 +1,6 @@
 import { Outlet, useNavigate, useLocation } from "react-router";
-import { cn } from "./ui/utils";
-import { Button } from "./ui/button";
+import { cn } from "@/app/shared/ui/utils";
+import { Button } from "@/app/shared/ui/button";
 import { 
   LayoutDashboard, 
   Car, 
@@ -50,8 +50,8 @@ export default function DashboardLayout() {
         <div className="p-6 border-b border-sidebar-border">
           <div className="flex items-center gap-3">
             <img 
-              src="figma:asset/c84924fffe8eefdfa83c8a6fa6d7ef2e7b310b86.png" 
-              alt="Doctor Auto Logo" 
+              src="/logo.png"
+              alt="Doctor Auto Logo"
               className="w-10 h-10"
             />
             <div>
@@ -106,8 +106,8 @@ export default function DashboardLayout() {
             <div className="p-6 border-b border-sidebar-border flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <img 
-                  src="figma:asset/c84924fffe8eefdfa83c8a6fa6d7ef2e7b310b86.png" 
-                  alt="Doctor Auto Logo" 
+                  src="/logo.png"
+                  alt="Doctor Auto Logo"
                   className="w-8 h-8"
                 />
                 <div>

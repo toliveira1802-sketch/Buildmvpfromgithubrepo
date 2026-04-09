@@ -13,10 +13,10 @@ import {
   HardDrive,
   Clock,
 } from "lucide-react";
-import { Button } from "../components/ui/button";
-import { Card } from "../components/ui/card";
-import { Input } from "../components/ui/input";
-import { Badge } from "../components/ui/badge";
+import { Button } from '../shared/ui/button';
+import { Card } from '../shared/ui/card';
+import { Input } from '../shared/ui/input';
+import { Badge } from '../shared/ui/badge';
 import {
   Dialog,
   DialogContent,
@@ -24,9 +24,9 @@ import {
   DialogHeader,
   DialogTitle,
   DialogFooter,
-} from "../components/ui/dialog";
-import { Label } from "../components/ui/label";
-import { Textarea } from "../components/ui/textarea";
+} from '../shared/ui/dialog';
+import { Label } from '../shared/ui/label';
+import { Textarea } from '../shared/ui/textarea';
 import { toast } from "sonner";
 import { kvStore } from "../../lib/supabase";
 import DevLayout from "../components/DevLayout";

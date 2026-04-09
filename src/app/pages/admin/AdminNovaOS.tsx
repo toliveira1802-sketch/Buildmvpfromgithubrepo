@@ -5,16 +5,17 @@ import {
   Plus, Trash2, Save, Search, Loader2, AlertCircle,
   CheckCircle2, ChevronRight, Package, UserPlus, X
 } from "lucide-react";
-import { Button } from "../../components/ui/button";
-import { Input } from "../../components/ui/input";
-import { Label } from "../../components/ui/label";
-import { Textarea } from "../../components/ui/textarea";
-import { Badge } from "../../components/ui/badge";
+import { Button } from '../../shared/ui/button';
+import { Input } from '../../shared/ui/input';
+import { Label } from '../../shared/ui/label';
+import { Textarea } from '../../shared/ui/textarea';
+import { Badge } from '../../shared/ui/badge';
 import { toast } from "sonner";
 import ConsultorLayout from "../../components/ConsultorLayout";
 import { supabase } from "../../../lib/supabase";
+import { sbEmpresa } from "../../../lib/supabase-extended";
 
-interface Cliente { id: string; full_name: string; phone: string | null; email: string | null; cpf: string | null; }
+interface Cliente { id: string; full_name: string; phone: string | null; email: string | null; cpf: string | null; _isNew?: boolean; _draft?: any; }
 interface Veiculo { id: string; placa: string; marca: string | null; modelo: string; versao: string | null; ano: number | null; ultima_km: number | null; }
 interface Item { _key: string; tipo: "servico" | "peca" | "fluido" | "outros"; descricao: string; quantidade: number; valor_unitario: number; valor_total: number; }
 
@@ -47,9 +48,12 @@ export default function AdminNovaOS() {
   const dropRef = useRef<HTMLDivElement>(null);
 
   // --- STEP 1: Veículo ---
+  // veiculos = veiculos JA cadastrados no banco do cliente existente
+  // veiculosNovos = veiculos pendentes (form atual) para inserir junto na submissao
   const [veiculos, setVeiculos] = useState<Veiculo[]>([]);
   const [veiculo, setVeiculo] = useState<Veiculo | null>(null);
-  const [veiculoManual, setVeiculoManual] = useState({ placa: "", modelo: "", marca: "", ano: "" });
+  const [veiculoManual, setVeiculoManual] = useState({ placa: "", modelo: "", marca: "", ano: "", versao: "", cor: "" });
+  const [veiculosNovos, setVeiculosNovos] = useState<Array<typeof veiculoManual>>([]);
   const [modoVeiculoManual, setModoVeiculoManual] = useState(false);
   const [kmEntrada, setKmEntrada] = useState("");
   const [nivelCombustivel, setNivelCombustivel] = useState("");
@@ -65,15 +69,20 @@ export default function AdminNovaOS() {
   // --- STEP 3: Submit ---
   const [saving, setSaving] = useState(false);
 
+  const isDemo = localStorage.getItem("drprime_demo") === "true";
+
   // Busca cliente com debounce
   useEffect(() => {
     if (query.length < 2) { setResults([]); setSearched(false); return; }
     const t = setTimeout(async () => {
       setLoading(true);
-      const { data } = await supabase.from("04_CLIENTS")
+      let q = supabase.from("clients")
         .select("id, full_name, phone, email, cpf")
         .or(`full_name.ilike.%${query}%,phone.ilike.%${query}%,cpf.ilike.%${query}%`)
         .limit(8);
+      const eid = sbEmpresa();
+      if (eid) q = q.eq("empresa_id", eid);
+      const { data } = await q;
       setResults(data || []);
       setSearched(true);
       setLoading(false);
@@ -85,29 +94,51 @@ export default function AdminNovaOS() {
   const selecionarCliente = async (c: Cliente) => {
     setCliente(c);
     setShowNovoCliente(false);
-    const { data } = await supabase.from("05_VEHICLES")
-      .select("id, placa, marca, modelo, versao, ano, ultima_km")
-      .eq("client_id", c.id).eq("is_active", true);
-    setVeiculos(data || []);
-    if (data?.length === 1) { setVeiculo(data[0]); if (data[0].ultima_km) setKmEntrada(String(data[0].ultima_km)); }
+    if (!isDemo) {
+      const { data } = await supabase.from("vehicles")
+        .select("id, placa, marca, modelo, versao, ano, ultima_km")
+        .eq("client_id", c.id).eq("is_active", true);
+      setVeiculos(data || []);
+      if (data?.length === 1) { setVeiculo(data[0]); if (data[0].ultima_km) setKmEntrada(String(data[0].ultima_km)); }
+    } else {
+      setVeiculos([]);
+    }
     toast.success(`${c.full_name} selecionado`);
   };
 
-  const salvarNovoCliente = async () => {
+  // Defere o INSERT do cliente — guarda em memoria, persiste atomico no submit final
+  const salvarNovoCliente = () => {
     if (!novoCliente.full_name || !novoCliente.phone) {
       toast.error("Nome e telefone são obrigatórios"); return;
     }
-    setSavingCliente(true);
-    try {
-      const { data, error } = await supabase.from("04_CLIENTS")
-        .insert({ ...novoCliente, birthday: novoCliente.birthday || null, zip_code: novoCliente.zip_code || null })
-        .select("id, full_name, phone, email, cpf").single();
-      if (error) throw error;
-      toast.success("Cliente cadastrado!");
-      await selecionarCliente(data);
-      setShowNovoCliente(false);
-    } catch (e: any) { toast.error(e.message); }
-    finally { setSavingCliente(false); }
+    const tempCliente: Cliente = {
+      id: `new-${Date.now()}`,
+      full_name: novoCliente.full_name,
+      phone: novoCliente.phone,
+      email: novoCliente.email || null,
+      cpf: novoCliente.cpf || null,
+      _isNew: true,
+      _draft: { ...novoCliente },
+    };
+    setCliente(tempCliente);
+    setVeiculos([]); // novo cliente, sem veiculos cadastrados
+    setShowNovoCliente(false);
+    setModoVeiculoManual(true);
+    toast.success("Cliente preenchido — agora cadastre o(s) veículo(s)");
+  };
+
+  // Adiciona veiculo do form a lista pendente, limpa form para outro
+  const addVeiculoPendente = () => {
+    if (!veiculoManual.placa || !veiculoManual.modelo) {
+      toast.error("Placa e modelo são obrigatórios"); return;
+    }
+    setVeiculosNovos(prev => [...prev, { ...veiculoManual, placa: veiculoManual.placa.toUpperCase() }]);
+    setVeiculoManual({ placa: "", modelo: "", marca: "", ano: "", versao: "", cor: "" });
+    toast.success("Veículo adicionado");
+  };
+
+  const removeVeiculoPendente = (idx: number) => {
+    setVeiculosNovos(prev => prev.filter((_, i) => i !== idx));
   };
 
   const addItem = () => {
@@ -120,28 +151,100 @@ export default function AdminNovaOS() {
 
   const canNext = () => {
     if (step === 0) return !!cliente;
-    if (step === 1) return modoVeiculoManual ? !!(veiculoManual.placa && veiculoManual.modelo) : !!veiculo;
+    if (step === 1) {
+      // Existing client must select a vehicle from list, OR have at least 1 pending vehicle
+      if (cliente?._isNew) return veiculosNovos.length > 0;
+      return !!veiculo || veiculosNovos.length > 0;
+    }
     if (step === 2) return true;
     return false;
   };
 
   const handleSubmit = async () => {
     const nomeCliente = cliente?.full_name;
-    const placa = modoVeiculoManual ? veiculoManual.placa : veiculo?.placa;
-    const modelo = modoVeiculoManual ? veiculoManual.modelo : veiculo?.modelo;
     if (!nomeCliente) { toast.error("Selecione um cliente"); return; }
-    if (!placa || !modelo) { toast.error("Informe placa e modelo"); return; }
+    if (!veiculo && veiculosNovos.length === 0) { toast.error("Adicione pelo menos um veículo"); return; }
+
     setSaving(true);
     try {
+      // Demo mode: simulate OS creation without hitting Supabase
+      if (isDemo) {
+        const fakeNum = `DEMO-${Date.now().toString().slice(-6)}`;
+        toast.success(`OS ${fakeNum} criada! (Demo)`);
+        setTimeout(() => navigate("/ordens-servico"), 1200);
+        return;
+      }
+
+      const empresaId = sbEmpresa() || null;
+      let realClientId: string | null = cliente?.id ?? null;
+      let primaryVehicle: { id: string | null; placa: string; modelo: string; marca: string | null; ano: number | null } | null = null;
+
+      // 1) Cliente novo + veiculos: cria atomicamente via RPC
+      if (cliente?._isNew) {
+        const draft = cliente._draft || {};
+        const { data: rpcData, error: rpcError } = await supabase.rpc("criar_cliente_com_veiculos", {
+          p_empresa_id: empresaId,
+          p_full_name: draft.full_name,
+          p_phone: draft.phone,
+          p_email: draft.email || null,
+          p_cpf: draft.cpf || null,
+          p_birthday: draft.birthday || null,
+          p_address: draft.address || null,
+          p_zip_code: draft.zip_code || null,
+          p_veiculos: veiculosNovos.map(v => ({
+            placa: v.placa, marca: v.marca, modelo: v.modelo,
+            versao: v.versao || null, ano: v.ano || null, ultima_km: kmEntrada || null,
+          })),
+        });
+        if (rpcError) throw rpcError;
+        realClientId = (rpcData as any).client_id;
+        const primaryId = (rpcData as any).primary_vehicle_id;
+        const v0 = veiculosNovos[0];
+        primaryVehicle = { id: primaryId, placa: v0.placa, modelo: v0.modelo, marca: v0.marca || null, ano: parseInt(v0.ano) || null };
+      }
+      // 2) Cliente existente + veiculo selecionado da lista
+      else if (veiculo) {
+        primaryVehicle = { id: veiculo.id, placa: veiculo.placa, modelo: veiculo.modelo, marca: veiculo.marca || null, ano: veiculo.ano || null };
+        // Adiciona veiculos novos pendentes ao cliente existente
+        if (veiculosNovos.length > 0) {
+          await supabase.from("vehicles").insert(
+            veiculosNovos.map(v => ({
+              empresa_id: empresaId, client_id: realClientId,
+              placa: v.placa.toUpperCase(), marca: v.marca, modelo: v.modelo,
+              versao: v.versao || null, ano: parseInt(v.ano) || null,
+              ultima_km: null, is_active: true,
+            }))
+          );
+        }
+      }
+      // 3) Cliente existente + apenas veiculos novos (nenhum selecionado da lista) — usa o primeiro novo
+      else if (veiculosNovos.length > 0) {
+        const inserted = await supabase.from("vehicles").insert(
+          veiculosNovos.map(v => ({
+            empresa_id: empresaId, client_id: realClientId,
+            placa: v.placa.toUpperCase(), marca: v.marca, modelo: v.modelo,
+            versao: v.versao || null, ano: parseInt(v.ano) || null,
+            ultima_km: kmEntrada ? parseInt(kmEntrada) : null, is_active: true,
+          }))
+        ).select("id");
+        if (inserted.error) throw inserted.error;
+        const v0 = veiculosNovos[0];
+        primaryVehicle = { id: inserted.data?.[0]?.id || null, placa: v0.placa, modelo: v0.modelo, marca: v0.marca || null, ano: parseInt(v0.ano) || null };
+      }
+
+      if (!primaryVehicle) { toast.error("Erro ao processar veículo"); setSaving(false); return; }
+
+      // 4) Insere OS com referencias ja persistidas
       const totalServicos = itens.filter(i => i.tipo === "servico").reduce((s, i) => s + i.valor_total, 0);
       const totalPecas = itens.filter(i => i.tipo !== "servico").reduce((s, i) => s + i.valor_total, 0);
-      const { data: os, error } = await supabase.from("06_OS").insert({
-        client_id: cliente?.id ?? null,
-        vehicle_id: modoVeiculoManual ? null : veiculo?.id ?? null,
+      const { data: os, error } = await supabase.from("ordens_servico").insert({
+        empresa_id: empresaId,
+        client_id: realClientId,
+        vehicle_id: primaryVehicle.id,
         client_nome: nomeCliente, client_phone: cliente?.phone ?? null,
-        veiculo_placa: placa, veiculo_modelo: modelo,
-        veiculo_marca: modoVeiculoManual ? veiculoManual.marca : veiculo?.marca ?? null,
-        veiculo_ano: modoVeiculoManual ? (parseInt(veiculoManual.ano) || null) : veiculo?.ano ?? null,
+        veiculo_placa: primaryVehicle.placa, veiculo_modelo: primaryVehicle.modelo,
+        veiculo_marca: primaryVehicle.marca,
+        veiculo_ano: primaryVehicle.ano,
         km_entrada: kmEntrada ? parseInt(kmEntrada) : null,
         nivel_combustivel: nivelCombustivel || null,
         descricao_problema: descricao || null,
@@ -152,8 +255,9 @@ export default function AdminNovaOS() {
         status: "diagnostico",
       }).select("id, numero_os").single();
       if (error) throw error;
+
       if (itens.length > 0) {
-        await supabase.from("07_OS_ITENS").insert(
+        await supabase.from("ordens_servico_itens").insert(
           itens.map(i => ({ os_id: os.id, tipo: i.tipo, descricao: i.descricao, quantidade: i.quantidade, valor_unitario: i.valor_unitario, valor_total: i.valor_total, status: "pendente" }))
         );
       }
@@ -392,18 +496,58 @@ export default function AdminNovaOS() {
                         {["Gasolina","Etanol","Flex","Diesel","Elétrico","Híbrido"].map(o => <option key={o} value={o}>{o}</option>)}
                       </select>
                     </div>
-                    {veiculos.length > 0 && (
-                      <button onClick={() => { setModoVeiculoManual(false); }} className="text-xs text-blue-400 hover:underline">
-                        ← Voltar para veículos cadastrados
-                      </button>
-                    )}
+                    {/* Botoes adicionar / outro carro */}
+                    <div className="flex gap-2 pt-2">
+                      <Button
+                        onClick={addVeiculoPendente}
+                        disabled={!veiculoManual.placa || !veiculoManual.modelo}
+                        className="bg-blue-600 hover:bg-blue-700 flex-1">
+                        <Plus className="size-4 mr-1" /> Adicionar este veículo
+                      </Button>
+                      {veiculos.length > 0 && (
+                        <Button onClick={() => { setModoVeiculoManual(false); }} variant="ghost" className="text-zinc-400 hover:text-white">
+                          Voltar
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {/* Lista de veiculos pendentes (a serem inseridos no submit) */}
+                {veiculosNovos.length > 0 && (
+                  <div className="space-y-2 pt-3 border-t border-zinc-800">
+                    <p className="text-xs text-emerald-400 uppercase tracking-wider flex items-center gap-1">
+                      <CheckCircle2 className="size-3" /> Veículos a cadastrar ({veiculosNovos.length})
+                    </p>
+                    {veiculosNovos.map((v, idx) => (
+                      <div key={idx} className="flex items-center justify-between p-3 bg-emerald-950/20 border border-emerald-800/40 rounded-xl">
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 rounded-full bg-emerald-600/30 flex items-center justify-center">
+                            <Car className="size-4 text-emerald-400" />
+                          </div>
+                          <div>
+                            <p className="text-white text-sm font-medium">{v.marca} {v.modelo} {v.versao}</p>
+                            <p className="text-emerald-300 text-xs font-mono">{v.placa}{v.ano ? ` · ${v.ano}` : ""}{idx === 0 ? " · veículo principal da OS" : ""}</p>
+                          </div>
+                        </div>
+                        <button onClick={() => removeVeiculoPendente(idx)} className="text-zinc-500 hover:text-red-400">
+                          <Trash2 className="size-4" />
+                        </button>
+                      </div>
+                    ))}
+                    <Button
+                      onClick={() => setModoVeiculoManual(true)}
+                      variant="outline"
+                      className="w-full border-dashed border-emerald-700/40 text-emerald-400 hover:bg-emerald-950/30 hover:text-emerald-300">
+                      <Plus className="size-4 mr-1" /> Adicionar outro carro
+                    </Button>
                   </div>
                 )}
 
                 {/* KM entrada — sempre visível quando tem veículo escolhido */}
-                {(veiculo || (modoVeiculoManual && veiculoManual.placa)) && (
+                {(veiculo || veiculosNovos.length > 0) && (
                   <div className="pt-3 border-t border-zinc-800">
-                    <Label className="text-zinc-300 text-sm">KM de Entrada</Label>
+                    <Label className="text-zinc-300 text-sm">KM de Entrada (veículo principal)</Label>
                     <Input type="number" value={kmEntrada} onChange={e => setKmEntrada(e.target.value)}
                       placeholder="Ex: 45000" className="bg-zinc-800 border-zinc-700 text-white mt-1 w-48" />
                   </div>
@@ -427,31 +571,7 @@ export default function AdminNovaOS() {
                   </div>
                   <div><Label className="text-zinc-300 text-sm">Observações internas</Label><Textarea value={observacoes} onChange={e => setObservacoes(e.target.value)} placeholder="Obs para a equipe..." rows={2} className="bg-zinc-800 border-zinc-700 text-white mt-1 resize-none" /></div>
                 </div>
-                <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6 space-y-4">
-                  <div className="flex items-center gap-2"><Package className="size-4 text-blue-400" /><h2 className="text-white font-semibold">Itens / Orçamento</h2><span className="text-zinc-500 text-xs">(opcional)</span></div>
-                  <div className="flex gap-2">
-                    <select value={novoItem.tipo} onChange={e => setNovoItem(p => ({...p,tipo:e.target.value as Item["tipo"]}))} className="bg-zinc-800 border border-zinc-700 text-white rounded-md px-3 py-2 text-xs w-24">
-                      {["servico","peca","fluido","outros"].map(t => <option key={t} value={t}>{t}</option>)}
-                    </select>
-                    <Input placeholder="Descrição" value={novoItem.descricao} onChange={e => setNovoItem(p => ({...p,descricao:e.target.value}))} className="flex-1 bg-zinc-800 border-zinc-700 text-white text-sm" />
-                    <Input type="number" placeholder="Qtd" value={novoItem.quantidade} onChange={e => setNovoItem(p => ({...p,quantidade:e.target.value}))} className="w-16 bg-zinc-800 border-zinc-700 text-white text-sm" />
-                    <Input type="number" placeholder="R$" value={novoItem.valor_unitario} onChange={e => setNovoItem(p => ({...p,valor_unitario:e.target.value}))} className="w-20 bg-zinc-800 border-zinc-700 text-white text-sm" />
-                    <Button onClick={addItem} className="bg-blue-600 hover:bg-blue-700 px-3"><Plus className="size-4" /></Button>
-                  </div>
-                  {itens.length > 0 ? (
-                    <div className="space-y-1">
-                      {itens.map(i => (
-                        <div key={i._key} className="flex items-center justify-between py-2 px-3 bg-zinc-800 rounded-lg text-sm">
-                          <div className="flex items-center gap-2"><Badge className="text-xs bg-zinc-700 text-zinc-300">{i.tipo}</Badge><span className="text-white">{i.descricao}</span></div>
-                          <div className="flex items-center gap-3"><span className="text-green-400 font-medium">{fmt(i.valor_total)}</span><button onClick={() => setItens(p => p.filter(x => x._key !== i._key))}><Trash2 className="size-3.5 text-zinc-500 hover:text-red-400" /></button></div>
-                        </div>
-                      ))}
-                      <div className="flex justify-between pt-2 border-t border-zinc-700 text-sm font-semibold">
-                        <span className="text-zinc-400">Total orçado</span><span className="text-green-400">{fmt(totalOrcado)}</span>
-                      </div>
-                    </div>
-                  ) : <p className="text-center text-zinc-600 text-sm py-4">Nenhum item adicionado</p>}
-                </div>
+                {/* Itens/Orçamento serão adicionados na tela de detalhes da OS após criação */}
               </div>
             )}
 

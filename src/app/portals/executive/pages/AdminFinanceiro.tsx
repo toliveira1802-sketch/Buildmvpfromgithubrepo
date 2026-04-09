@@ -15,7 +15,7 @@ export default function AdminFinanceiro() {
   async function load() {
     setLoading(true);
     const start = new Date(); start.setDate(1); start.setHours(0,0,0,0);
-    const { data: rows } = await sb.from("06_OS")
+    const { data: rows } = await sb.from("ordens_servico")
       .select("status,valor_total").gte("created_at",start.toISOString());
     const all = rows||[];
     const conc = all.filter(r=>r.status==="concluido"||r.status==="entregue");
