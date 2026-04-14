@@ -1,0 +1,47 @@
+/* src/app/consultor/tokens/theme.css */
+.consultor {
+  --bg-0: #09090b;
+  --bg-1: #0c0c0f;
+  --bg-2: #131318;
+  --bg-3: #1a1a20;
+  --border: #26262d;
+  --border-strong: #35353f;
+
+  --text-0: #fafafa;
+  --text-1: #a1a1aa;
+  --text-2: #71717a;
+  --text-3: #52525b;
+
+  --brand: #e5323b;
+  --brand-hover: #f0474f;
+  --brand-subtle: rgba(229, 50, 59, 0.12);
+  --brand-ring: rgba(229, 50, 59, 0.35);
+
+  --success: #22c55e;
+  --warning: #f59e0b;
+  --info: #3b82f6;
+  --danger: #ef4444;
+  --vip: #c084fc;
+
+  --radius-input: 6px;
+  --radius-card: 10px;
+  --radius-panel: 14px;
+
+  --shadow-panel: 0 20px 50px -12px rgba(0, 0, 0, 0.7), 0 0 0 1px var(--border);
+
+  background: var(--bg-0);
+  color: var(--text-0);
+  font-family: 'Inter Variable', system-ui, -apple-system, sans-serif;
+  font-feature-settings: 'cv11', 'ss01', 'ss03';
+}
+
+.consultor .mono {
+  font-family: 'Geist Mono Variable', ui-monospace, monospace;
+  font-variant-numeric: tabular-nums;
+}
+
+.consultor *:focus-visible {
+  outline: 2px solid var(--brand-ring);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
