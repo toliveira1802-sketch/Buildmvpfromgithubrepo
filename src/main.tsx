@@ -4,6 +4,9 @@ import "./styles/index.css";
 import '@fontsource-variable/inter'
 import '@fontsource-variable/geist-mono'
 import './app/consultor/tokens/theme.css'
+import { initializeSeedIfEmpty } from './app/consultor/bootstrap'
+
+initializeSeedIfEmpty()
 
 function showFatalError(title: string, detail: string) {
   const container = document.createElement('div');

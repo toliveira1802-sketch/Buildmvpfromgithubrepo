@@ -1,4 +1,5 @@
-import { createBrowserRouter, redirect } from "react-router";
+import { createBrowserRouter, redirect, Outlet } from "react-router";
+import ConsultorLayout from "./components/ConsultorLayout";
 import Landing from "./pages/Landing";
 import Login from "./pages/Login";
 import DevLogin from "./pages/DevLogin";
@@ -15,6 +16,8 @@ import ProtectedRoute from "./components/ProtectedRoute";
 import AdminAgendamentos from "./pages/admin/AdminAgendamentos";
 import AdminClientes from "./pages/admin/AdminClientes";
 import AdminClienteDetalhe from "./pages/admin/AdminClienteDetalhe";
+import AdminVeiculos from "./pages/admin/AdminVeiculos";
+import AdminVeiculoDetalhe from "./pages/admin/AdminVeiculoDetalhe";
 import AdminOrdensServico from "./pages/admin/AdminOrdensServico";
 import AdminOSDetalhes from "./pages/admin/AdminOSDetalhes";
 import AdminNovaOS from "./pages/admin/AdminNovaOS";
@@ -66,6 +69,14 @@ import AdminSugestoes from "./pages/admin/AdminSugestoes";
 import AdminChecklists from "./pages/admin/AdminChecklists";
 import AdminNotifications from "./pages/admin/AdminNotifications";
 import AdminAjuda from "./pages/admin/AdminAjuda";
+
+function ConsultorShell() {
+  return (
+    <ConsultorLayout>
+      <Outlet />
+    </ConsultorLayout>
+  );
+}
 
 export const router = createBrowserRouter([
   {
@@ -197,6 +208,26 @@ export const router = createBrowserRouter([
       {
         index: true,
         Component: AdminClienteDetalhe,
+      },
+    ],
+  },
+  {
+    path: "/veiculos",
+    Component: ProtectedRoute,
+    children: [
+      {
+        Component: ConsultorShell,
+        children: [{ index: true, Component: AdminVeiculos }],
+      },
+    ],
+  },
+  {
+    path: "/veiculos/:id",
+    Component: ProtectedRoute,
+    children: [
+      {
+        Component: ConsultorShell,
+        children: [{ index: true, Component: AdminVeiculoDetalhe }],
       },
     ],
   },
