@@ -2,6 +2,25 @@ import '@testing-library/jest-dom/vitest'
 import { afterEach, beforeEach, vi } from 'vitest'
 import { cleanup } from '@testing-library/react'
 
+// In vitest's jsdom env, global.AbortController/AbortSignal come from jsdom
+// but global.Request is Node's — so `new Request(url, { signal })` rejects
+// jsdom's AbortSignal. Patch Request to strip jsdom signals (we do not need
+// actual aborts in memory router tests).
+{
+  const OrigRequest = globalThis.Request
+  class PatchedRequest extends OrigRequest {
+    constructor(input: RequestInfo | URL, init?: RequestInit) {
+      if (init && 'signal' in init) {
+        const { signal: _discard, ...rest } = init
+        super(input, rest)
+      } else {
+        super(input, init)
+      }
+    }
+  }
+  ;(globalThis as any).Request = PatchedRequest
+}
+
 beforeEach(() => {
   const store = new Map<string, string>()
   const mock: Storage = {

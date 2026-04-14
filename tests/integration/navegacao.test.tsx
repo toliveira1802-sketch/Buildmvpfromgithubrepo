@@ -1,23 +1,4 @@
 // tests/integration/navegacao.test.tsx
-// In vitest's jsdom env, global.AbortController/AbortSignal come from jsdom
-// but global.Request is Node's — so `new Request(url, { signal })` rejects
-// jsdom's AbortSignal. Patch Request to strip jsdom signals (we do not need
-// actual aborts in a memory router test).
-{
-  const OrigRequest = globalThis.Request
-  class PatchedRequest extends OrigRequest {
-    constructor(input: RequestInfo | URL, init?: RequestInit) {
-      if (init && 'signal' in init) {
-        const { signal: _discard, ...rest } = init
-        super(input, rest)
-      } else {
-        super(input, init)
-      }
-    }
-  }
-  ;(globalThis as any).Request = PatchedRequest
-}
-
 import { describe, it, expect } from 'vitest'
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
