@@ -13,6 +13,8 @@ import { useClientesStore } from '@/app/consultor/store/clientesStore'
 import { useVeiculosStore } from '@/app/consultor/store/veiculosStore'
 import { formatPlaca, formatDataRelativa } from '@/app/consultor/lib/formatters'
 import type { StatusOS } from '@/app/consultor/types'
+import { ETAPAS_ORDENADAS, ETAPA_LABELS, SLA_POR_ETAPA_MINUTOS } from '@/app/consultor/types'
+import { minutosNaEtapa, slaStatusFor, formatSLA } from '@/app/consultor/lib/slaHelpers'
 import TabClienteVeiculo from './os-tabs/TabClienteVeiculo'
 import TabChecklist from './os-tabs/TabChecklist'
 import TabOrcamento from './os-tabs/TabOrcamento'
@@ -109,6 +111,8 @@ export default function AdminOSDetalhes() {
           <InfoChip label="Entrada" value={formatDataRelativa(os.criadoEm)} />
         </div>
 
+        <EtapaControl osId={id} />
+
         {erro && <div className="rounded-[6px] bg-[var(--danger)]/10 border border-[var(--danger)]/30 text-[var(--danger)] text-sm px-4 py-2">{erro}</div>}
 
         <Tabs
@@ -123,6 +127,57 @@ export default function AdminOSDetalhes() {
         />
       </div>
     </>
+  )
+}
+
+function EtapaControl({ osId }: { osId: string }) {
+  const os = useOSStore((s) => s.getById(osId))
+  const updateEtapa = useOSStore((s) => s.updateEtapa)
+  if (!os) return null
+  const mins = minutosNaEtapa(os)
+  const sla = slaStatusFor(os.etapa, mins)
+  const slaAlvo = SLA_POR_ETAPA_MINUTOS[os.etapa]
+  const slaColor =
+    sla === 'ok' ? 'var(--success)' :
+    sla === 'atencao' ? 'var(--warning)' :
+    sla === 'critico' ? 'var(--danger)' :
+    'var(--text-3)'
+
+  return (
+    <div className="rounded-[10px] bg-[var(--bg-2)] border border-[var(--border)] p-5">
+      <div className="flex items-center justify-between mb-4">
+        <div>
+          <div className="text-xs uppercase tracking-wider text-[var(--text-2)] font-medium">Etapa atual</div>
+          <div className="text-lg font-semibold text-[var(--text-0)] mt-0.5">{ETAPA_LABELS[os.etapa]}</div>
+        </div>
+        <div className="text-right">
+          <div className="text-xs uppercase tracking-wider text-[var(--text-2)] font-medium">Tempo na etapa</div>
+          <div className="mono text-lg font-semibold" style={{ color: slaColor }}>
+            {formatSLA(mins)}
+            {slaAlvo !== null && <span className="text-xs text-[var(--text-2)] ml-1">/ {formatSLA(slaAlvo)}</span>}
+          </div>
+        </div>
+      </div>
+      <div className="flex flex-wrap gap-1.5">
+        {ETAPAS_ORDENADAS.map((e) => {
+          const ativo = os.etapa === e
+          return (
+            <button
+              key={e}
+              onClick={() => updateEtapa(osId, e)}
+              disabled={ativo}
+              className={`h-7 px-3 rounded-full text-xs font-medium transition-colors ${
+                ativo
+                  ? 'bg-[var(--brand)] text-white cursor-default'
+                  : 'bg-[var(--bg-3)] text-[var(--text-1)] hover:text-[var(--text-0)] border border-[var(--border)]'
+              }`}
+            >
+              {ETAPA_LABELS[e]}
+            </button>
+          )
+        })}
+      </div>
+    </div>
   )
 }
 

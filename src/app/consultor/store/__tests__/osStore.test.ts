@@ -50,6 +50,34 @@ describe('osStore', () => {
       const os = useOSStore.getState().create(baseDraft)
       expect(os.status).toBe('aguardando')
     })
+
+    it('inicializa etapa criar com histórico', () => {
+      const os = useOSStore.getState().create(baseDraft)
+      expect(os.etapa).toBe('criar')
+      expect(os.etapaHistorico).toHaveLength(1)
+      expect(os.etapaHistorico[0].etapa).toBe('criar')
+      expect(os.etapaHistorico[0].entradaEm).toBeTruthy()
+    })
+  })
+
+  describe('updateEtapa', () => {
+    it('muda etapa e atualiza histórico', () => {
+      const os = useOSStore.getState().create(baseDraft)
+      useOSStore.getState().updateEtapa(os.id, 'diagnostico')
+      const after = useOSStore.getState().getById(os.id)!
+      expect(after.etapa).toBe('diagnostico')
+      expect(after.etapaHistorico).toHaveLength(2)
+      expect(after.etapaHistorico[0].saidaEm).toBeTruthy()
+      expect(after.etapaHistorico[1].entradaEm).toBeTruthy()
+    })
+
+    it('deriva status a partir da etapa', () => {
+      const os = useOSStore.getState().create(baseDraft)
+      useOSStore.getState().updateEtapa(os.id, 'em_execucao')
+      expect(useOSStore.getState().getById(os.id)?.status).toBe('em_andamento')
+      useOSStore.getState().updateEtapa(os.id, 'entregue')
+      expect(useOSStore.getState().getById(os.id)?.status).toBe('concluida')
+    })
   })
 
   describe('updateStatus — transições', () => {

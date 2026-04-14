@@ -5,9 +5,19 @@ import type {
   OS,
   Consultor,
   ChecklistItem,
+  EtapaOS,
 } from '../types'
 import { CHECKLIST_TEMPLATE } from '../types'
 import { uuid } from '../lib/idGenerator'
+
+function etapaPorStatus(status: OS['status']): EtapaOS {
+  switch (status) {
+    case 'aguardando': return 'diagnostico'
+    case 'em_andamento': return 'em_execucao'
+    case 'concluida': return 'entregue'
+    case 'cancelada': return 'cancelada'
+  }
+}
 
 export const SEED_CONSULTOR: Consultor = {
   id: 'consultor-thales',
@@ -90,11 +100,14 @@ function buildSeedOS(
   aprovacao: OS['orcamento']['aprovacao'] = 'pendente',
 ): OS {
   const criado = daysAgo(daysOffset)
+  const etapa = etapaPorStatus(status)
   return {
     id,
     clienteId,
     veiculoId,
     status,
+    etapa,
+    etapaHistorico: [{ etapa, entradaEm: criado }],
     tipoServico,
     kmEntrada,
     queixa,

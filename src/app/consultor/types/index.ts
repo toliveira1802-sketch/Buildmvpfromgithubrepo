@@ -71,11 +71,87 @@ export interface Entrega {
   finalizadaEm?: ISO
 }
 
+export type EtapaOS =
+  | 'criar'
+  | 'diagnostico'
+  | 'em_orcamento'
+  | 'aguardando_aprovar'
+  | 'aguardando_peca'
+  | 'em_execucao'
+  | 'teste'
+  | 'pronta'
+  | 'entregue'
+  | 'cancelada'
+
+export interface EtapaHistoricoItem {
+  etapa: EtapaOS
+  entradaEm: ISO
+  saidaEm?: ISO
+}
+
+/** SLA alvo (em minutos) por etapa. Etapas terminais (entregue, cancelada) são null. */
+export const SLA_POR_ETAPA_MINUTOS: Record<EtapaOS, number | null> = {
+  criar: 60,
+  diagnostico: 240,
+  em_orcamento: 1440,
+  aguardando_aprovar: 2880,
+  aguardando_peca: 4320,
+  em_execucao: 480,
+  teste: 120,
+  pronta: 1440,
+  entregue: null,
+  cancelada: null,
+}
+
+/** Ordem oficial das etapas no Kanban. */
+export const ETAPAS_ORDENADAS: EtapaOS[] = [
+  'criar',
+  'diagnostico',
+  'em_orcamento',
+  'aguardando_aprovar',
+  'aguardando_peca',
+  'em_execucao',
+  'teste',
+  'pronta',
+  'entregue',
+  'cancelada',
+]
+
+/** Labels pt-BR pra cada etapa (usado em UI). */
+export const ETAPA_LABELS: Record<EtapaOS, string> = {
+  criar: 'Criar',
+  diagnostico: 'Diagnóstico',
+  em_orcamento: 'Em orçamento',
+  aguardando_aprovar: 'Aguardando aprovar',
+  aguardando_peca: 'Aguardando peça',
+  em_execucao: 'Em execução',
+  teste: 'Teste',
+  pronta: 'Pronta',
+  entregue: 'Entregue',
+  cancelada: 'Cancelada',
+}
+
+/** Mapeia etapa → status coarse (pra compat com lista de OS existente). */
+export const ETAPA_TO_STATUS: Record<EtapaOS, StatusOS> = {
+  criar: 'aguardando',
+  diagnostico: 'aguardando',
+  em_orcamento: 'aguardando',
+  aguardando_aprovar: 'aguardando',
+  aguardando_peca: 'aguardando',
+  em_execucao: 'em_andamento',
+  teste: 'em_andamento',
+  pronta: 'concluida',
+  entregue: 'concluida',
+  cancelada: 'cancelada',
+}
+
 export interface OS {
   id: string
   clienteId: UUID
   veiculoId: UUID
   status: StatusOS
+  etapa: EtapaOS
+  etapaHistorico: EtapaHistoricoItem[]
   tipoServico: TipoServico
   kmEntrada: number
   queixa: string

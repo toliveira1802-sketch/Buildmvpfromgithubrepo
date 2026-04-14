@@ -1,7 +1,8 @@
 // src/app/consultor/store/osStore.ts
 import { create } from 'zustand'
 import { persist, createJSONStorage } from 'zustand/middleware'
-import type { OS, CreateOSDraft, StatusOS, Orcamento, Entrega, ChecklistItem } from '../types'
+import type { OS, CreateOSDraft, StatusOS, Orcamento, Entrega, ChecklistItem, EtapaOS } from '../types'
+import { ETAPA_TO_STATUS } from '../types'
 import { nextOSId } from '../lib/idGenerator'
 import { buildChecklist, SEED_CONSULTOR } from './seed'
 import { normalizaPlaca } from '../lib/formatters'
@@ -26,6 +27,7 @@ interface OSState {
   items: OS[]
   create: (draft: CreateOSDraft) => OS
   updateStatus: (id: string, next: StatusOS) => void
+  updateEtapa: (id: string, nextEtapa: EtapaOS) => void
   updateChecklist: (id: string, items: ChecklistItem[]) => void
   updateOrcamento: (id: string, orc: Omit<Orcamento, 'aprovadoEm'> & { aprovadoEm?: string }) => void
   updateEntrega: (id: string, entrega: Entrega) => void
@@ -68,6 +70,8 @@ export const useOSStore = create<OSState>()(
           kmEntrada: draft.kmEntrada,
           queixa: draft.queixa,
           status: 'aguardando',
+          etapa: 'criar',
+          etapaHistorico: [{ etapa: 'criar', entradaEm: now }],
           checklist: buildChecklist(),
           orcamento: { linhas: [], aprovacao: 'pendente' },
           entrega: {},
@@ -85,10 +89,47 @@ export const useOSStore = create<OSState>()(
         if (!allowed.includes(nextStatus)) {
           throw new Error(`Transição inválida: ${os.status} → ${nextStatus}`)
         }
+        const etapaMap: Record<StatusOS, EtapaOS | null> = {
+          aguardando: null,
+          em_andamento: 'em_execucao',
+          concluida: 'entregue',
+          cancelada: 'cancelada',
+        }
+        const nextEtapa = etapaMap[nextStatus]
+        const now = new Date().toISOString()
         set((s) => ({
-          items: s.items.map((o) =>
-            o.id === id ? { ...o, status: nextStatus, atualizadoEm: new Date().toISOString() } : o,
-          ),
+          items: s.items.map((o) => {
+            if (o.id !== id) return o
+            let historico = o.etapaHistorico
+            let etapa = o.etapa
+            if (nextEtapa) {
+              historico = o.etapaHistorico.map((h, i) =>
+                i === o.etapaHistorico.length - 1 && !h.saidaEm ? { ...h, saidaEm: now } : h,
+              )
+              historico = [...historico, { etapa: nextEtapa, entradaEm: now }]
+              etapa = nextEtapa
+            }
+            return { ...o, status: nextStatus, etapa, etapaHistorico: historico, atualizadoEm: now }
+          }),
+        }))
+      },
+      updateEtapa: (id, nextEtapa) => {
+        const now = new Date().toISOString()
+        set((s) => ({
+          items: s.items.map((o) => {
+            if (o.id !== id) return o
+            const historico = o.etapaHistorico.map((h, i) =>
+              i === o.etapaHistorico.length - 1 && !h.saidaEm ? { ...h, saidaEm: now } : h,
+            )
+            historico.push({ etapa: nextEtapa, entradaEm: now })
+            return {
+              ...o,
+              etapa: nextEtapa,
+              status: ETAPA_TO_STATUS[nextEtapa],
+              etapaHistorico: historico,
+              atualizadoEm: now,
+            }
+          }),
         }))
       },
       updateChecklist: (id, items) =>
