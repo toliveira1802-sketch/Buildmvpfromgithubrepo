@@ -246,8 +246,8 @@ export const router = createBrowserRouter([
     Component: ProtectedRoute,
     children: [
       {
-        index: true,
-        Component: AdminOSDetalhes,
+        Component: ConsultorShell,
+        children: [{ index: true, Component: AdminOSDetalhes }],
       },
     ],
   },
