@@ -80,7 +80,8 @@ export function NovaOSWizard({ open, onOpenChange, initialClienteId, initialVeic
     ? !!clienteSelId
     : novoCliente.nome.trim().length >= 3 && normalizaDigitos(novoCliente.cpf).length === 11 && normalizaDigitos(novoCliente.telefone).length >= 10
 
-  const canAdvance2 = veiculoMode === 'existente'
+  const modoVeiculoEfetivo: VeiculoMode = veiculosDoCliente.length === 0 ? 'novo' : veiculoMode
+  const canAdvance2 = modoVeiculoEfetivo === 'existente'
     ? !!veiculoSelId
     : !!(novoVeiculo.marca.trim() && novoVeiculo.modelo.trim() && Number(novoVeiculo.ano) >= 1990 && normalizaPlaca(novoVeiculo.placa).length === 7 && novoVeiculo.cor.trim() && Number(novoVeiculo.km) >= 0)
 
@@ -106,7 +107,7 @@ export function NovaOSWizard({ open, onOpenChange, initialClienteId, initialVeic
       clienteId = c.id
     }
     let veiculoId = veiculoSelId
-    if (veiculoMode === 'novo' && clienteId) {
+    if (modoVeiculoEfetivo === 'novo' && clienteId) {
       const v: Veiculo = {
         id: uuid(),
         clienteId,
@@ -135,7 +136,7 @@ export function NovaOSWizard({ open, onOpenChange, initialClienteId, initialVeic
 
   useEffect(() => {
     if (step === 2 && !kmEntrada) {
-      const v = veiculoMode === 'existente'
+      const v = modoVeiculoEfetivo === 'existente'
         ? veiculos.find((x) => x.id === veiculoSelId)
         : null
       if (v) setKmEntrada(String(v.km))
@@ -146,7 +147,7 @@ export function NovaOSWizard({ open, onOpenChange, initialClienteId, initialVeic
   const clienteEscolhido: Cliente | null = clienteMode === 'existente'
     ? clientes.find((c) => c.id === clienteSelId) ?? null
     : (novoCliente.nome ? { id: 'preview', nome: novoCliente.nome, cpf: novoCliente.cpf, telefone: novoCliente.telefone, status: 'ativo', criadoEm: '' } : null)
-  const veiculoEscolhido: Pick<Veiculo, 'marca' | 'modelo' | 'placa' | 'ano'> | null = veiculoMode === 'existente'
+  const veiculoEscolhido: Pick<Veiculo, 'marca' | 'modelo' | 'placa' | 'ano'> | null = modoVeiculoEfetivo === 'existente'
     ? veiculos.find((v) => v.id === veiculoSelId) ?? null
     : (novoVeiculo.marca ? { marca: novoVeiculo.marca, modelo: novoVeiculo.modelo, placa: novoVeiculo.placa, ano: Number(novoVeiculo.ano) } : null)
 
