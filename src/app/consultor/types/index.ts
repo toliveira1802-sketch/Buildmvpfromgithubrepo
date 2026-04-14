@@ -178,6 +178,26 @@ export interface CreateOSDraft {
   queixa: string
 }
 
+export type StatusAgendamento =
+  | 'agendado'
+  | 'confirmado'
+  | 'compareceu'
+  | 'faltou'
+  | 'cancelado'
+
+export interface Agendamento {
+  id: UUID
+  clienteId: UUID
+  veiculoId?: UUID
+  dataHora: ISO            // ISO string — combined date+time
+  duracaoMinutos: number   // estimated duration, typically 30/60/120/240
+  tipoServico: TipoServico
+  status: StatusAgendamento
+  observacoes?: string
+  criadoEm: ISO
+  osIdGerada?: string      // when status=compareceu, link to the OS created
+}
+
 export const CHECKLIST_TEMPLATE: ReadonlyArray<Omit<ChecklistItem, 'id'>> = [
   { categoria: 'Motor', item: 'Nível de óleo', status: null },
   { categoria: 'Motor', item: 'Filtro de ar', status: null },

@@ -6,6 +6,7 @@ import type {
   Consultor,
   ChecklistItem,
   EtapaOS,
+  Agendamento,
 } from '../types'
 import { CHECKLIST_TEMPLATE } from '../types'
 import { uuid } from '../lib/idGenerator'
@@ -197,4 +198,22 @@ export const SEED_OS: OS[] = [
     { id: uuid(), tipo: 'peca', descricao: 'Pastilha cerâmica dianteira', quantidade: 1, valorUnitario: 140000 },
     { id: uuid(), tipo: 'servico', descricao: 'Instalação pastilhas', quantidade: 1, valorUnitario: 40000 },
   ], 'aprovado'),
+]
+
+function daysFromNowAt(days: number, hour: number, minute = 0): string {
+  const d = new Date()
+  d.setDate(d.getDate() + days)
+  d.setHours(hour, minute, 0, 0)
+  return d.toISOString()
+}
+
+export const SEED_AGENDAMENTOS: Agendamento[] = [
+  { id: 'ag-0001', clienteId: ids.c1, veiculoId: ids.v1, dataHora: daysFromNowAt(0, 9, 0), duracaoMinutos: 120, tipoServico: 'revisao', status: 'confirmado', observacoes: 'Revisão programada 30k', criadoEm: daysAgo(5) },
+  { id: 'ag-0002', clienteId: ids.c4, veiculoId: ids.v6, dataHora: daysFromNowAt(0, 14, 30), duracaoMinutos: 60, tipoServico: 'diagnostico', status: 'agendado', criadoEm: daysAgo(2) },
+  { id: 'ag-0003', clienteId: ids.c12, veiculoId: ids.v15, dataHora: daysFromNowAt(1, 10, 0), duracaoMinutos: 240, tipoServico: 'remap_ecu', status: 'confirmado', observacoes: 'Stage 2 A45 AMG', criadoEm: daysAgo(3) },
+  { id: 'ag-0004', clienteId: ids.c14, veiculoId: ids.v17, dataHora: daysFromNowAt(1, 15, 0), duracaoMinutos: 60, tipoServico: 'revisao', status: 'agendado', criadoEm: daysAgo(1) },
+  { id: 'ag-0005', clienteId: ids.c5, veiculoId: ids.v7, dataHora: daysFromNowAt(2, 9, 30), duracaoMinutos: 180, tipoServico: 'manutencao', status: 'agendado', observacoes: 'Troca kit embreagem — peça já chegou', criadoEm: daysAgo(6) },
+  { id: 'ag-0006', clienteId: ids.c11, veiculoId: ids.v14, dataHora: daysFromNowAt(3, 11, 0), duracaoMinutos: 120, tipoServico: 'revisao', status: 'confirmado', observacoes: 'Revisão inaugural M2', criadoEm: daysAgo(4) },
+  { id: 'ag-0007', clienteId: ids.c2, veiculoId: ids.v3, dataHora: daysFromNowAt(-1, 10, 0), duracaoMinutos: 60, tipoServico: 'freios', status: 'compareceu', observacoes: 'Verificar pastilhas', criadoEm: daysAgo(7), osIdGerada: 'OS-2026-0025' },
+  { id: 'ag-0008', clienteId: ids.c9, veiculoId: ids.v12, dataHora: daysFromNowAt(-2, 14, 0), duracaoMinutos: 60, tipoServico: 'diagnostico', status: 'faltou', criadoEm: daysAgo(10) },
 ]
