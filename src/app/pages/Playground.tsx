@@ -1,6 +1,8 @@
 // src/app/pages/Playground.tsx
 import { useState } from 'react'
-import { Sparkles, Users, Car, ClipboardList, Trash2, Info } from 'lucide-react'
+import { Sparkles, Users, Car, ClipboardList, Trash2, Info, AlertTriangle, CheckCircle2, Clock, MinusCircle } from 'lucide-react'
+import { ETAPAS_ORDENADAS, ETAPA_LABELS, SLA_POR_ETAPA_MINUTOS } from '@/app/consultor/types'
+import { slaStatusFor, formatSLA, type SLAStatus } from '@/app/consultor/lib/slaHelpers'
 import { Topbar } from '@/app/consultor/components/Topbar'
 import { Button } from '@/app/consultor/components/Button'
 import { StatusBadge } from '@/app/consultor/components/StatusBadge'
@@ -106,6 +108,9 @@ export default function Playground() {
             tabs={[
               { value: 'btn', label: 'Buttons', content: <ButtonShowcase /> },
               { value: 'badge', label: 'StatusBadge', content: <BadgeShowcase /> },
+              { value: 'etapas', label: 'Etapas', content: <EtapasShowcase /> },
+              { value: 'sla', label: 'SLA', content: <SLAShowcase /> },
+              { value: 'ag', label: 'Agendamento', content: <AgendamentoShowcase /> },
               { value: 'stat', label: 'StatCard', content: <StatShowcase /> },
               { value: 'step', label: 'Stepper', content: <StepperShowcase /> },
               { value: 'input', label: 'SearchInput', content: <InputShowcase value={searchValue} onChange={setSearchValue} /> },
@@ -317,4 +322,141 @@ function WizardStepBox({ titulo, conteudo }: { titulo: string; conteudo: string 
 function fmtMoeda(centavos: number): string {
   return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' })
     .format(centavos / 100).replace(/\u00a0/g, ' ')
+}
+
+function EtapasShowcase() {
+  const current: (typeof ETAPAS_ORDENADAS)[number] = 'em_execucao'
+  return (
+    <div className="space-y-5">
+      <div className="rounded-[10px] bg-[var(--bg-2)] border border-[var(--border)] p-5">
+        <div className="text-xs uppercase tracking-wider text-[var(--text-2)] mb-3">Pills de etapa (ativa = brand, inativa = bg-3)</div>
+        <div className="flex flex-wrap gap-1.5">
+          {ETAPAS_ORDENADAS.map((e) => {
+            const ativo = e === current
+            return (
+              <span
+                key={e}
+                className={`h-7 px-3 rounded-full text-xs font-medium inline-flex items-center ${
+                  ativo
+                    ? 'bg-[var(--brand)] text-white'
+                    : 'bg-[var(--bg-3)] text-[var(--text-1)] border border-[var(--border)]'
+                }`}
+              >
+                {ETAPA_LABELS[e]}
+              </span>
+            )
+          })}
+        </div>
+      </div>
+      <div className="rounded-[10px] bg-[var(--bg-2)] border border-[var(--border)] p-5">
+        <div className="text-xs uppercase tracking-wider text-[var(--text-2)] mb-3">Pipeline completo com SLA alvo</div>
+        <ol className="space-y-1.5">
+          {ETAPAS_ORDENADAS.map((e, i) => {
+            const sla = SLA_POR_ETAPA_MINUTOS[e]
+            return (
+              <li key={e} className="flex items-center gap-3">
+                <span className="mono text-[10px] text-[var(--text-3)] w-6">{String(i + 1).padStart(2, '0')}</span>
+                <span className="text-sm text-[var(--text-0)] w-48">{ETAPA_LABELS[e]}</span>
+                <span className="mono text-xs text-[var(--text-2)]">
+                  {sla === null ? 'terminal' : `alvo: ${formatSLA(sla)}`}
+                </span>
+              </li>
+            )
+          })}
+        </ol>
+      </div>
+    </div>
+  )
+}
+
+function SLAShowcase() {
+  const slaColor: Record<SLAStatus, string> = {
+    ok: 'var(--success)',
+    atencao: 'var(--warning)',
+    critico: 'var(--danger)',
+    terminal: 'var(--text-3)',
+  }
+  const slaIcon: Record<SLAStatus, typeof Clock> = {
+    ok: CheckCircle2,
+    atencao: Clock,
+    critico: AlertTriangle,
+    terminal: MinusCircle,
+  }
+  const exemplos = [
+    { etapa: 'diagnostico' as const, mins: 60, label: 'OS-2026-0100' },
+    { etapa: 'diagnostico' as const, mins: 200, label: 'OS-2026-0101' },
+    { etapa: 'diagnostico' as const, mins: 340, label: 'OS-2026-0102' },
+    { etapa: 'entregue' as const, mins: 9999, label: 'OS-2026-0103' },
+  ]
+  return (
+    <div className="space-y-3">
+      <div className="rounded-[10px] bg-[var(--bg-2)] border border-[var(--border)] p-5">
+        <div className="text-xs uppercase tracking-wider text-[var(--text-2)] mb-4">Badge de SLA em um card do Pátio</div>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          {exemplos.map((ex) => {
+            const sla = slaStatusFor(ex.etapa, ex.mins)
+            const color = slaColor[sla]
+            const Icon = slaIcon[sla]
+            return (
+              <div key={ex.label} className="rounded-[6px] bg-[var(--bg-1)] border border-[var(--border)] p-3">
+                <div className="flex items-start justify-between gap-2 mb-2">
+                  <span className="mono text-[11px] text-[var(--text-2)]">{ex.label}</span>
+                  <span
+                    className="inline-flex items-center gap-1 text-[10px] font-medium px-1.5 py-0.5 rounded"
+                    style={{ color, backgroundColor: `color-mix(in srgb, ${color} 16%, transparent)` }}
+                  >
+                    <Icon className="size-3" />
+                    {formatSLA(ex.mins > 1440 ? 1440 : ex.mins)}
+                  </span>
+                </div>
+                <div className="text-xs text-[var(--text-1)]">Estado: <span className="mono text-[var(--text-0)]">{sla}</span></div>
+              </div>
+            )
+          })}
+        </div>
+      </div>
+      <div className="rounded-[10px] bg-[var(--bg-2)] border border-[var(--border)] p-5">
+        <div className="text-xs uppercase tracking-wider text-[var(--text-2)] mb-3">Regras</div>
+        <ul className="text-sm text-[var(--text-1)] space-y-1.5 list-disc pl-5">
+          <li><span className="text-[var(--success)] font-medium">ok</span> — ≤ 75% do SLA alvo consumido</li>
+          <li><span className="text-[var(--warning)] font-medium">atenção</span> — 75–100% consumido</li>
+          <li><span className="text-[var(--danger)] font-medium">crítico</span> — acima de 100% (estourou)</li>
+          <li><span className="text-[var(--text-2)] font-medium">terminal</span> — etapa sem SLA (entregue, cancelada)</li>
+        </ul>
+      </div>
+    </div>
+  )
+}
+
+function AgendamentoShowcase() {
+  const status = [
+    { value: 'agendado', label: 'Agendado', color: 'var(--warning)' },
+    { value: 'confirmado', label: 'Confirmado', color: 'var(--info)' },
+    { value: 'compareceu', label: 'Compareceu', color: 'var(--success)' },
+    { value: 'faltou', label: 'Faltou', color: 'var(--danger)' },
+    { value: 'cancelado', label: 'Cancelado', color: 'var(--text-3)' },
+  ]
+  return (
+    <div className="rounded-[10px] bg-[var(--bg-2)] border border-[var(--border)] p-5">
+      <div className="text-xs uppercase tracking-wider text-[var(--text-2)] mb-4">Status de agendamento</div>
+      <div className="flex flex-wrap gap-2">
+        {status.map((s) => (
+          <span
+            key={s.value}
+            className="inline-flex items-center gap-1.5 h-[22px] px-2 rounded-full text-xs font-medium uppercase tracking-wide"
+            style={{
+              backgroundColor: `color-mix(in srgb, ${s.color} 14%, transparent)`,
+              color: s.color,
+            }}
+          >
+            <span className="size-1.5 rounded-full" style={{ backgroundColor: s.color }} aria-hidden />
+            {s.label}
+          </span>
+        ))}
+      </div>
+      <p className="text-xs text-[var(--text-2)] mt-4">
+        Agendado e Confirmado são pré-checkin. Compareceu dispara criação automática de OS. Faltou e Cancelado são terminais.
+      </p>
+    </div>
+  )
 }
