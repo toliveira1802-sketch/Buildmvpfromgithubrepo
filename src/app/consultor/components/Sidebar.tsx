@@ -3,7 +3,7 @@ import { useState } from 'react'
 import { NavLink, useNavigate } from 'react-router'
 import {
   LayoutDashboard, Users, ClipboardList, LogOut, RotateCcw,
-  PlusCircle, Wrench, Calendar, ChevronDown, FolderOpen,
+  PlusCircle, Wrench, Calendar, ChevronDown, FolderOpen, Sparkles,
 } from 'lucide-react'
 import { useAuthStore } from '../store/authStore'
 import { resetConsultorMocks } from '../bootstrap'
@@ -110,6 +110,19 @@ export function Sidebar() {
       </nav>
 
       <div className="px-3 py-3 border-t border-[var(--border)] space-y-2">
+        <NavLink
+          to="/playground"
+          className={({ isActive }) =>
+            `w-full flex items-center gap-2 h-8 px-3 rounded-[6px] text-xs transition-colors ${
+              isActive
+                ? 'text-[var(--brand)] bg-[var(--brand-subtle)]'
+                : 'text-[var(--text-2)] hover:text-[var(--text-0)] hover:bg-[var(--bg-3)]'
+            }`
+          }
+        >
+          <Sparkles className="size-3.5" />
+          Playground
+        </NavLink>
         <button
           onClick={resetConsultorMocks}
           className="w-full flex items-center gap-2 h-8 px-3 rounded-[6px] text-xs text-[var(--text-2)] hover:text-[var(--text-0)] hover:bg-[var(--bg-3)]"

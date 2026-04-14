@@ -11,6 +11,7 @@ import DevUsers from "./pages/DevUsers";
 import DevDatabase from "./pages/DevDatabase";
 import DevExplorer from "./pages/DevExplorer";
 import Dashboard from "./pages/Dashboard";
+import Playground from "./pages/Playground";
 import PatioKanban from "./pages/PatioKanban";
 import ProtectedRoute from "./components/ProtectedRoute";
 import AdminAgendamentos from "./pages/admin/AdminAgendamentos";
@@ -168,6 +169,16 @@ export const router = createBrowserRouter([
       {
         Component: ConsultorShell,
         children: [{ index: true, Component: Dashboard }],
+      },
+    ],
+  },
+  {
+    path: "/playground",
+    Component: ProtectedRoute,
+    children: [
+      {
+        Component: ConsultorShell,
+        children: [{ index: true, Component: Playground }],
       },
     ],
   },
