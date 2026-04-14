@@ -1,6 +1,8 @@
 // src/app/consultor/store/__tests__/osStore.test.ts
 import { describe, it, expect, beforeEach } from 'vitest'
 import { useOSStore } from '../osStore'
+import { useClientesStore } from '../clientesStore'
+import { useVeiculosStore } from '../veiculosStore'
 import { resetAllStores } from './testUtils'
 import type { CreateOSDraft } from '../../types'
 
@@ -16,6 +18,8 @@ describe('osStore', () => {
   beforeEach(() => {
     resetAllStores()
     useOSStore.setState({ items: [] })
+    useClientesStore.setState({ items: [] })
+    useVeiculosStore.setState({ items: [] })
   })
 
   describe('create', () => {
@@ -149,6 +153,22 @@ describe('osStore', () => {
     })
     it('vazio retorna tudo', () => {
       expect(useOSStore.getState().search('')).toHaveLength(1)
+    })
+
+    it('busca por nome do cliente', () => {
+      useClientesStore.getState().add({
+        id: 'c-1', nome: 'Rafael Moreira', cpf: '11111111111',
+        telefone: '11999990000', status: 'ativo', criadoEm: new Date().toISOString(),
+      })
+      expect(useOSStore.getState().search('rafael')).toHaveLength(1)
+    })
+
+    it('busca por placa do veículo', () => {
+      useVeiculosStore.getState().add({
+        id: 'v-1', clienteId: 'c-1', marca: 'BMW', modelo: '330i',
+        ano: 2022, placa: 'ABC1D23', cor: 'Preto', km: 10000, remap: 'stock',
+      })
+      expect(useOSStore.getState().search('abc1d23')).toHaveLength(1)
     })
   })
 

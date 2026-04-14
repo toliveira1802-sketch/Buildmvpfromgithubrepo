@@ -5,6 +5,8 @@ import type { OS, CreateOSDraft, StatusOS, Orcamento, Entrega, ChecklistItem } f
 import { nextOSId } from '../lib/idGenerator'
 import { buildChecklist, SEED_CONSULTOR } from './seed'
 import { normalizaPlaca } from '../lib/formatters'
+import { useClientesStore } from './clientesStore'
+import { useVeiculosStore } from './veiculosStore'
 
 const VALID_TRANSITIONS: Record<StatusOS, StatusOS[]> = {
   aguardando: ['em_andamento', 'cancelada'],
@@ -119,10 +121,16 @@ export const useOSStore = create<OSState>()(
       search: (query) => {
         const q = query.trim().toLowerCase()
         if (!q) return get().items
+        const clientes = useClientesStore.getState().items
+        const veiculos = useVeiculosStore.getState().items
         const placaQ = normalizaPlaca(q)
         return get().items.filter((o) => {
           if (o.id.toLowerCase().includes(q)) return true
-          if (placaQ && o.id.replace(/-/g, '').toLowerCase().includes(placaQ.toLowerCase())) return true
+          const cli = clientes.find((c) => c.id === o.clienteId)
+          if (cli?.nome.toLowerCase().includes(q)) return true
+          const vei = veiculos.find((v) => v.id === o.veiculoId)
+          if (vei && placaQ && normalizaPlaca(vei.placa).includes(placaQ)) return true
+          if (vei?.modelo.toLowerCase().includes(q)) return true
           return false
         })
       },
