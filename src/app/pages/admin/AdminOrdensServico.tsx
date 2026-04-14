@@ -1,118 +1,139 @@
-﻿import { useState, useEffect } from "react";
-import { useNavigate } from "react-router";
-import { FileText, Plus, Search, RefreshCw, Loader2, Filter } from "lucide-react";
-import { Button } from '../../shared/ui/button';
-import { Input } from '../../shared/ui/input';
-import { Badge } from '../../shared/ui/badge';
-import { Card } from '../../shared/ui/card';
-import AdminLayout from "../../components/AdminLayout";
-import { supabase as sb } from "../../../lib/supabase";
+import { useMemo, useState, useEffect } from 'react'
+import { useNavigate, useSearchParams } from 'react-router'
+import { ClipboardList } from 'lucide-react'
+import { Topbar } from '@/app/consultor/components/Topbar'
+import { Button } from '@/app/consultor/components/Button'
+import { SearchInput } from '@/app/consultor/components/SearchInput'
+import { DataTable } from '@/app/consultor/components/DataTable'
+import { StatusBadge } from '@/app/consultor/components/StatusBadge'
+import { EmptyState } from '@/app/consultor/components/EmptyState'
+import { useOSStore } from '@/app/consultor/store/osStore'
+import { useClientesStore } from '@/app/consultor/store/clientesStore'
+import { useVeiculosStore } from '@/app/consultor/store/veiculosStore'
+import { formatDataRelativa, formatPlaca } from '@/app/consultor/lib/formatters'
+import type { OS, StatusOS, TipoServico } from '@/app/consultor/types'
+import { NovaOSWizard } from './NovaOSWizard'
 
-const STATUS_COLORS: Record<string,string> = {
-  diagnostico:"bg-zinc-700 text-zinc-300", orcamento:"bg-yellow-900/50 text-yellow-300",
-  aguardando_aprovacao:"bg-orange-900/50 text-orange-300", aprovado:"bg-blue-900/50 text-blue-300",
-  em_execucao:"bg-purple-900/50 text-purple-300", concluido:"bg-green-900/50 text-green-300",
-  entregue:"bg-teal-900/50 text-teal-300", cancelado:"bg-red-900/50 text-red-300",
-};
+const filtros: { key: StatusOS | 'todos'; label: string }[] = [
+  { key: 'todos', label: 'Todas' },
+  { key: 'aguardando', label: 'Aguardando' },
+  { key: 'em_andamento', label: 'Em andamento' },
+  { key: 'concluida', label: 'Concluída' },
+  { key: 'cancelada', label: 'Cancelada' },
+]
 
-const TODOS_STATUS = ["diagnostico","orcamento","aguardando_aprovacao","aprovado","em_execucao","concluido","entregue","cancelado"];
-
-interface OS {
-  id:number; numero_os:string; status:string; cliente_nome:string;
-  veiculo_placa:string; veiculo_modelo:string; mecanico_nome:string;
-  valor_total:number; created_at:string;
+const tipoLabel: Record<TipoServico, string> = {
+  revisao: 'Revisão', remap_ecu: 'Remap ECU', remap_tcu: 'Remap TCU',
+  diagnostico: 'Diagnóstico', manutencao: 'Manutenção',
+  freios: 'Freios', suspensao: 'Suspensão', outro: 'Outro',
 }
 
 export default function AdminOrdensServico() {
-  const navigate = useNavigate();
-  const [os, setOs] = useState<OS[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [search, setSearch] = useState("");
-  const [statusFiltro, setStatusFiltro] = useState("todos");
-  const [page, setPage] = useState(0);
-  const PAGE = 20;
+  const navigate = useNavigate()
+  const [params, setParams] = useSearchParams()
 
-  useEffect(() => { load(); }, [statusFiltro, page]);
+  const items = useOSStore((s) => s.items)
+  const filterByStatus = useOSStore((s) => s.filterByStatus)
+  const search = useOSStore((s) => s.search)
+  const clientes = useClientesStore((s) => s.items)
+  const veiculos = useVeiculosStore((s) => s.items)
 
-  async function load() {
-    setLoading(true);
-    let q = sb.from("ordens_servico")
-      .select("id,numero_os,status,cliente_nome,veiculo_placa,veiculo_modelo,mecanico_nome,valor_total,created_at")
-      .order("created_at",{ascending:false})
-      .range(page*PAGE, (page+1)*PAGE-1);
-    if (statusFiltro !== "todos") q = q.eq("status", statusFiltro);
-    const { data } = await q;
-    setOs(data||[]);
-    setLoading(false);
+  const initialStatus = (params.get('status') as StatusOS | 'todos') ?? 'todos'
+  const [statusAtivo, setStatusAtivo] = useState<StatusOS | 'todos'>(initialStatus)
+  const [q, setQ] = useState('')
+  const [wizardOpen, setWizardOpen] = useState(params.get('wizard') === 'open')
+
+  useEffect(() => {
+    if (params.get('wizard') === 'open') setWizardOpen(true)
+  }, [params])
+
+  const filtrados = useMemo(() => {
+    const base = q ? search(q) : items
+    return statusAtivo === 'todos' ? base : base.filter((o) => o.status === statusAtivo)
+  }, [q, statusAtivo, items, search])
+
+  const contagens = useMemo(() => {
+    return filtros.reduce<Record<string, number>>((acc, f) => {
+      acc[f.key] = f.key === 'todos' ? items.length : filterByStatus(f.key as StatusOS).length
+      return acc
+    }, {})
+  }, [items, filterByStatus])
+
+  const initialCliente = params.get('clienteId') ?? undefined
+  const initialVeiculo = params.get('veiculoId') ?? undefined
+
+  function closeWizard() {
+    setWizardOpen(false)
+    const np = new URLSearchParams(params)
+    np.delete('wizard'); np.delete('clienteId'); np.delete('veiculoId')
+    setParams(np, { replace: true })
   }
 
-  const filtered = os.filter(o => {
-    const q = search.toLowerCase();
-    return !q || o.numero_os?.toLowerCase().includes(q) || o.cliente_nome?.toLowerCase().includes(q) || o.veiculo_placa?.toLowerCase().includes(q);
-  });
-
-  const fmt = (v:number) => v ? v.toLocaleString("pt-BR",{style:"currency",currency:"BRL"}) : "—";
-  const fmtDate = (d:string) => new Date(d).toLocaleDateString("pt-BR");
-
   return (
-    <AdminLayout>
-      <div className="p-6 space-y-6 max-w-7xl mx-auto">
-        <div className="flex items-center justify-between">
-          <div><h1 className="text-3xl font-bold text-white flex items-center gap-2"><FileText className="h-8 w-8 text-purple-400"/>Ordens de Serviço</h1>
-            <p className="text-zinc-400 mt-1">Gerenciar OS do sistema</p>
-          </div>
-          <Button onClick={() => navigate("/ordens-servico/nova")} className="bg-red-600 hover:bg-red-700"><Plus className="h-4 w-4 mr-2"/>Nova OS</Button>
+    <>
+      <Topbar
+        title="Ordens de Serviço"
+        actions={
+          <>
+            <SearchInput value={q} onChange={setQ} placeholder="Buscar por ID, cliente ou placa" />
+            <Button variant="primary" onClick={() => setWizardOpen(true)}>+ Nova OS</Button>
+          </>
+        }
+      />
+
+      <div className="p-7 space-y-5">
+        <div className="flex items-center gap-2 flex-wrap">
+          {filtros.map((f) => {
+            const ativo = statusAtivo === f.key
+            return (
+              <button
+                key={f.key}
+                onClick={() => setStatusAtivo(f.key)}
+                className={`h-8 px-3 rounded-full text-xs font-medium flex items-center gap-2 transition-colors duration-[140ms] ${
+                  ativo
+                    ? 'bg-[var(--brand-subtle)] text-[var(--brand)] border border-[var(--brand)]/30'
+                    : 'bg-[var(--bg-2)] text-[var(--text-1)] border border-[var(--border)] hover:text-[var(--text-0)]'
+                }`}
+              >
+                {f.label}
+                <span className="mono opacity-70">{contagens[f.key] ?? 0}</span>
+              </button>
+            )
+          })}
         </div>
 
-        <div className="flex flex-wrap gap-3">
-          <div className="relative flex-1 min-w-64"><Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-500"/>
-            <Input value={search} onChange={e => setSearch(e.target.value)} placeholder="Buscar OS, cliente, placa..." className="pl-10 bg-zinc-800 border-zinc-700 text-white"/>
-          </div>
-          <select value={statusFiltro} onChange={e => { setStatusFiltro(e.target.value); setPage(0); }}
-            className="bg-zinc-800 border border-zinc-700 text-white rounded-md px-3 py-2 text-sm">
-            <option value="todos">Todos os status</option>
-            {TODOS_STATUS.map(s => <option key={s} value={s}>{s.replace(/_/g," ")}</option>)}
-          </select>
-          <Button onClick={load} variant="outline" className="border-zinc-700 text-zinc-300"><RefreshCw className={"h-4 w-4"+(loading?" animate-spin":"")}/></Button>
-        </div>
-
-        <Card className="bg-zinc-900 border-zinc-800 overflow-hidden">
-          <table className="w-full text-sm">
-            <thead className="border-b border-zinc-800 bg-zinc-900/50">
-              <tr>{["Número","Cliente","Veículo","Mecânico","Status","Valor","Data",""].map(h =>
-                <th key={h} className="px-4 py-3 text-left text-zinc-400 font-medium">{h}</th>
-              )}</tr>
-            </thead>
-            <tbody>
-              {loading ? (<tr><td colSpan={8} className="py-16 text-center text-zinc-500"><Loader2 className="h-6 w-6 animate-spin mx-auto mb-2"/>Carregando...</td></tr>)
-              : filtered.length === 0 ? (<tr><td colSpan={8} className="py-16 text-center text-zinc-500">
-                <FileText className="h-10 w-10 mx-auto mb-3 opacity-30"/>
-                <p>Nenhuma OS encontrada</p>
-                <Button onClick={() => navigate("/ordens-servico/nova")} className="mt-3 bg-red-600 hover:bg-red-700 text-sm">Criar primeira OS</Button>
-              </td></tr>)
-              : filtered.map(o => (
-                <tr key={o.id} className="border-b border-zinc-800/60 hover:bg-zinc-800/30 cursor-pointer" onClick={() => navigate("/ordens-servico/"+o.id)}>
-                  <td className="px-4 py-3 font-mono text-blue-400 text-xs">{o.numero_os||"—"}</td>
-                  <td className="px-4 py-3 text-white font-medium">{o.cliente_nome||"—"}</td>
-                  <td className="px-4 py-3"><p className="text-zinc-300">{o.veiculo_modelo||"—"}</p><p className="text-zinc-500 text-xs">{o.veiculo_placa}</p></td>
-                  <td className="px-4 py-3 text-zinc-400">{o.mecanico_nome||"—"}</td>
-                  <td className="px-4 py-3"><Badge className={(STATUS_COLORS[o.status]||"bg-zinc-700 text-zinc-300")+" text-xs"}>{o.status?.replace(/_/g," ")||"—"}</Badge></td>
-                  <td className="px-4 py-3 text-green-400 font-medium">{fmt(o.valor_total)}</td>
-                  <td className="px-4 py-3 text-zinc-500 text-xs">{fmtDate(o.created_at)}</td>
-                  <td className="px-4 py-3"><Button variant="ghost" size="sm" className="text-zinc-400 hover:text-white text-xs">Ver →</Button></td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-          <div className="flex items-center justify-between px-4 py-3 border-t border-zinc-800">
-            <span className="text-zinc-500 text-xs">Página {page+1}</span>
-            <div className="flex gap-2">
-              <Button size="sm" variant="outline" disabled={page===0} onClick={() => setPage(p=>p-1)} className="border-zinc-700 text-zinc-300 h-7 text-xs">← Anterior</Button>
-              <Button size="sm" variant="outline" disabled={os.length < PAGE} onClick={() => setPage(p=>p+1)} className="border-zinc-700 text-zinc-300 h-7 text-xs">Próxima →</Button>
-            </div>
-          </div>
-        </Card>
+        <DataTable<OS>
+          data={filtrados}
+          rowKey={(o) => o.id}
+          onRowClick={(o) => navigate(`/ordens-servico/${o.id}`)}
+          emptyState={<EmptyState icon={ClipboardList} titulo="Nenhuma OS encontrada" />}
+          columns={[
+            { key: 'id', header: 'OS', render: (o) => <span className="mono text-[var(--text-0)]">{o.id}</span>, width: '140px' },
+            { key: 'cli', header: 'Cliente', render: (o) => clientes.find((c) => c.id === o.clienteId)?.nome ?? '—' },
+            { key: 'v', header: 'Veículo', render: (o) => {
+              const v = veiculos.find((x) => x.id === o.veiculoId)
+              if (!v) return '—'
+              return (
+                <div>
+                  <div className="text-[var(--text-0)]">{v.marca} {v.modelo}</div>
+                  <div className="text-xs text-[var(--text-2)] mono">{formatPlaca(v.placa)}</div>
+                </div>
+              )
+            }},
+            { key: 't', header: 'Tipo', render: (o) => <span className="text-[var(--text-1)]">{tipoLabel[o.tipoServico]}</span>, width: '140px' },
+            { key: 'e', header: 'Entrada', render: (o) => <span className="text-[var(--text-1)]">{formatDataRelativa(o.criadoEm)}</span>, width: '140px' },
+            { key: 's', header: 'Status', render: (o) => <StatusBadge tipo="os" valor={o.status} />, width: '160px' },
+          ]}
+        />
       </div>
-    </AdminLayout>
-  );
+
+      <NovaOSWizard
+        open={wizardOpen}
+        onOpenChange={(v) => v ? setWizardOpen(true) : closeWizard()}
+        initialClienteId={initialCliente}
+        initialVeiculoId={initialVeiculo}
+        onCreated={(osId) => navigate(`/ordens-servico/${osId}`)}
+      />
+    </>
+  )
 }
