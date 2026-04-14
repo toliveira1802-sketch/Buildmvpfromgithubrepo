@@ -1,6 +1,9 @@
 import { createRoot } from "react-dom/client";
 import App from "./app/App.tsx";
 import "./styles/index.css";
+import '@fontsource-variable/inter'
+import '@fontsource-variable/geist-mono'
+import './app/consultor/tokens/theme.css'
 
 function showFatalError(title: string, detail: string) {
   const container = document.createElement('div');
