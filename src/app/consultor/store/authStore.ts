@@ -24,8 +24,21 @@ export const useAuthStore = create<AuthState>()(
         set({ loading: true, error: null })
         await new Promise((r) => setTimeout(r, 400))
         set({ consultor: SEED_CONSULTOR, loading: false })
+        try {
+          globalThis.localStorage.setItem('dap-user', JSON.stringify({
+            id: 1,
+            nome: SEED_CONSULTOR.nome,
+            cargo: 'Consultor',
+            nivelAcessoId: 3,
+          }))
+        } catch { /* noop em ambientes sem storage */ }
       },
-      logout: () => set({ consultor: null, error: null }),
+      logout: () => {
+        set({ consultor: null, error: null })
+        try {
+          globalThis.localStorage.removeItem('dap-user')
+        } catch { /* noop */ }
+      },
     }),
     {
       name: 'dap-consultor/auth',
