@@ -1,5 +1,7 @@
 // src/app/pages/admin/os-tabs/TabEntrega.tsx
 import { useState } from 'react'
+import { useNavigate } from 'react-router'
+import { toast } from 'sonner'
 import { Button } from '@/app/consultor/components/Button'
 import { useOSStore } from '@/app/consultor/store/osStore'
 import { formatMoeda, formatKm } from '@/app/consultor/lib/formatters'
@@ -9,6 +11,7 @@ export default function TabEntrega({ osId }: { osId: string }) {
   const os = useOSStore((s) => s.getById(osId))!
   const updateEntrega = useOSStore((s) => s.updateEntrega)
   const updateStatus = useOSStore((s) => s.updateStatus)
+  const navigate = useNavigate()
 
   const [kmSaida, setKmSaida] = useState<string>(String(os.entrega.kmSaida ?? ''))
   const [forma, setForma] = useState<FormaPagamento | ''>(os.entrega.formaPagamento ?? '')
@@ -28,6 +31,8 @@ export default function TabEntrega({ osId }: { osId: string }) {
         finalizadaEm: new Date().toISOString(),
       })
       updateStatus(osId, 'concluida')
+      toast.success(`OS ${os.id} finalizada`, { description: 'Movida para concluídas.' })
+      navigate('/ordens-servico?status=concluida')
     } catch (e: unknown) {
       setErro(e instanceof Error ? e.message : 'Erro')
     }

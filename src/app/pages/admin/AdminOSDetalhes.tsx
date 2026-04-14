@@ -3,6 +3,7 @@ import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router'
 import * as Dropdown from '@radix-ui/react-dropdown-menu'
 import { ChevronDown } from 'lucide-react'
+import { toast } from 'sonner'
 import { Topbar } from '@/app/consultor/components/Topbar'
 import { Tabs } from '@/app/consultor/components/Tabs'
 import { StatusBadge } from '@/app/consultor/components/StatusBadge'
@@ -55,7 +56,16 @@ export default function AdminOSDetalhes() {
 
   function handleStatusChange(next: StatusOS) {
     setErro(null)
-    try { updateStatus(id, next) } catch (e: unknown) { setErro(e instanceof Error ? e.message : 'Erro') }
+    try {
+      updateStatus(id, next)
+      if (next === 'concluida' || next === 'cancelada') {
+        const label = next === 'concluida' ? 'Concluída' : 'Cancelada'
+        toast.success(`OS ${id} · ${label}`, { description: `Movida para ${label.toLowerCase()}s.` })
+        navigate(`/ordens-servico?status=${next}`)
+      }
+    } catch (e: unknown) {
+      setErro(e instanceof Error ? e.message : 'Erro')
+    }
   }
 
   const allowed = TRANSITIONS[os.status]

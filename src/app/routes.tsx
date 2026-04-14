@@ -176,8 +176,8 @@ export const router = createBrowserRouter([
     Component: ProtectedRoute,
     children: [
       {
-        index: true,
-        Component: PatioKanban,
+        Component: ConsultorShell,
+        children: [{ index: true, Component: PatioKanban }],
       },
     ],
   },
@@ -186,8 +186,8 @@ export const router = createBrowserRouter([
     Component: ProtectedRoute,
     children: [
       {
-        index: true,
-        Component: AdminAgendamentos,
+        Component: ConsultorShell,
+        children: [{ index: true, Component: AdminAgendamentos }],
       },
     ],
   },
